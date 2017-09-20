@@ -200,7 +200,7 @@ public class MyUI extends UI {
 		SeatsRemaining seatsRemainingCheck = loadSeatsRemaining(ofy);
 		if(seatsRemainingCheck.getSeatsRemaining() < reservation.getNrOfSeats())
 			throw new RuntimeException("Got booked while you were entering your data. Only " + seatsRemainingCheck.getSeatsRemaining()  + " seats are now remaining.");
-		seatsRemainingCheck.setSeatsRemaining(seatsRemainingCheck.getSeatsRemaining() - 1);
+		seatsRemainingCheck.setSeatsRemaining(seatsRemainingCheck.getSeatsRemaining() - reservation.getNrOfSeats());
 		Map<Key<Object>, Object> savedData = ofy.save().entities(seatsRemainingCheck, reservation).now();
 		Reservation savedReservation = (Reservation) savedData.get(Key.create(reservation));
 		Long reservationId = savedReservation.id;
