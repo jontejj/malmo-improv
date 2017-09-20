@@ -6,7 +6,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -14,6 +13,9 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebServlet;
 
 import com.google.common.base.Charsets;
@@ -24,6 +26,9 @@ import com.google.schemaorg.JsonLdSyntaxException;
 import com.google.schemaorg.core.CoreFactory;
 import com.google.schemaorg.core.EventReservation;
 import com.google.schemaorg.core.ReservationStatusTypeEnum;
+import com.googlecode.objectify.Key;
+import com.googlecode.objectify.ObjectifyFilter;
+import com.googlecode.objectify.ObjectifyService;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.data.BeanValidationBinder;
@@ -55,8 +60,6 @@ public class MyUI extends UI {
 
 	//private static final Logger log = Logger.getLogger(MyUI.class.getName());
 
-	//TODO(joj): save in the database
-	private static final AtomicLong reservationIds = new AtomicLong(1);
 	private static final com.google.schemaorg.core.Event event =
 			CoreFactory.newTheaterEventBuilder()
 			.addUrl("https://www.facebook.com/events/126158174682437")
@@ -116,8 +119,10 @@ public class MyUI extends UI {
 			{
 				//server side validation fails after client validation has passed?
 			}
+			Key<Reservation> savedReservation = ObjectifyService.ofy().save().entity(reservation).now();
+			Long reservationId = savedReservation.getId();
 			EventReservation eventReservation = CoreFactory.newEventReservationBuilder()
-					.addReservationId("" + reservationIds.getAndIncrement())
+					.addReservationId("" + reservationId)
 					.addReservationStatus(ReservationStatusTypeEnum.RESERVATION_CONFIRMED)
 					.addUnderName(CoreFactory.newPersonBuilder()
 					              .addName(reservation.getName())
@@ -129,7 +134,7 @@ public class MyUI extends UI {
 			map.put("jsonLd", asJsonLd);
 			sendConfirmationEmail(reservation, map);
 			layout.addComponent(new Label("Thanks " + reservation.getName()
-			+ ", your reservation of " + reservation.getNrOfSeats() + " seat(s) is complete! An email confirmation has been sent to " + reservation.getEmail()));
+			+ ", your reservation of " + reservation.getNrOfSeats() + " seat(s) is complete! Your reservation number is " + reservationId + ". An email confirmation has been sent to " + reservation.getEmail()));
 		});
 
 		layout.addComponents(name, email, nrOfSeats, button);
@@ -187,5 +192,15 @@ public class MyUI extends UI {
 	@WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
 	@VaadinServletConfiguration(ui = MyUI.class, productionMode = true)
 	public static class MyUIServlet extends GAEVaadinServlet {
+	}
+
+	@WebFilter(urlPatterns = "/*", asyncSupported = true)
+	public static class MyObjectifyFilter extends ObjectifyFilter
+	{
+		@Override
+		public void init(FilterConfig filterConfig) throws ServletException
+		{
+			ObjectifyService.register(Reservation.class);
+		}
 	}
 }

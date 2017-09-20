@@ -20,8 +20,14 @@ import javax.validation.constraints.Min;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotBlank;
 
+import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Id;
+
+@Entity
 public class Reservation
 {
+	@Id Long id;
+
 	@NotBlank
 	private String name;
 	@Email

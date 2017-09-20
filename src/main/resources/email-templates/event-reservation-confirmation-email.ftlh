@@ -8,6 +8,6 @@ ${jsonLd}
 </head>
 <body>
 	<p>Dear Madam/Sir ${underName.name},<br/>
-     You have successfully reserved ${description} at ${reservationFor.name} </p>
+     You have successfully reserved ${description} at ${reservationFor.name}. Your reservation number is ${reservationId}.</p>
 </body>
 </html>
