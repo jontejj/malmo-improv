@@ -30,8 +30,15 @@ public class Reservation
 
 	@NotBlank
 	private String name;
+
+	@NotBlank
+	private String phone;
 	@Email
 	private String email;
+
+	@NotBlank
+	private String discount;
+
 	@Min(1)
 	@Max(5)
 	private int nrOfSeats;
@@ -59,5 +66,21 @@ public class Reservation
 	public void setNrOfSeats(int nrOfSeats)
 	{
 		this.nrOfSeats = nrOfSeats;
+	}
+	public String getDiscount()
+	{
+		return discount;
+	}
+	public void setDiscount(String discount)
+	{
+		this.discount = discount;
+	}
+	public String getPhone()
+	{
+		return phone;
+	}
+	public void setPhone(String phone)
+	{
+		this.phone = phone;
 	}
 }

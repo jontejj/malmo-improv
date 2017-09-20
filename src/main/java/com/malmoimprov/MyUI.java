@@ -3,6 +3,7 @@ package com.malmoimprov;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -14,6 +15,7 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.FilterConfig;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebServlet;
@@ -27,18 +29,26 @@ import com.google.schemaorg.core.CoreFactory;
 import com.google.schemaorg.core.EventReservation;
 import com.google.schemaorg.core.ReservationStatusTypeEnum;
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFilter;
 import com.googlecode.objectify.ObjectifyService;
+import com.googlecode.objectify.VoidWork;
+import com.googlecode.objectify.util.Closeable;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.data.BeanValidationBinder;
 import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationException;
 import com.vaadin.data.converter.StringToIntegerConverter;
+import com.vaadin.icons.VaadinIcons;
+import com.vaadin.server.ExternalResource;
 import com.vaadin.server.GAEVaadinServlet;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Link;
+import com.vaadin.ui.RadioButtonGroup;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
@@ -59,11 +69,16 @@ import freemarker.template.TemplateExceptionHandler;
 public class MyUI extends UI {
 
 	//private static final Logger log = Logger.getLogger(MyUI.class.getName());
+	private static final String FIRST_EVENT_ID = "1";
+	private static final BigDecimal ticketPrice = new BigDecimal("40");
+	private static final BigDecimal memberPricePercentage = new BigDecimal("0.75");
 
+	private static final String facebookEventUrl = "https://www.facebook.com/events/126158174682437";
+	private static final String eventName = "Malmö Improvisatorium Performance";
 	private static final com.google.schemaorg.core.Event event =
 			CoreFactory.newTheaterEventBuilder()
-			.addUrl("https://www.facebook.com/events/126158174682437")
-			.addName("Malmö Improvisatorium Performance")
+			.addUrl(facebookEventUrl)
+			.addName(eventName)
 			.addOrganizer("Malmö Improvisatorium")
 			.addStartDate("2017-10-14T18:30:00+02:00")
 			.addDuration("PT1H30M")
@@ -90,7 +105,38 @@ public class MyUI extends UI {
 	protected void init(VaadinRequest vaadinRequest) {
 		binder = new BeanValidationBinder<>(Reservation.class);
 
-		final VerticalLayout layout = new VerticalLayout();
+		final VerticalLayout page = new VerticalLayout();
+
+		SeatsRemaining seatsRemaining = loadSeatsRemaining(ObjectifyService.ofy());
+
+		if(seatsRemaining.getSeatsRemaining() > 0)
+		{
+			page.addComponent(step1(page, seatsRemaining));
+		}
+		else
+		{
+			page.addComponent(fullyBooked());
+		}
+		setContent(page);
+	}
+
+	private SeatsRemaining loadSeatsRemaining(Objectify ofy)
+	{
+		return ofy.load().key(Key.create(SeatsRemaining.class, FIRST_EVENT_ID)).now();
+	}
+
+	private VerticalLayout fullyBooked()
+	{
+		final VerticalLayout fullyBooked = new VerticalLayout();
+		fullyBooked.addComponent(new Label("Fully booked! Better luck next time!"));
+		return fullyBooked;
+	}
+
+	private VerticalLayout step1(final VerticalLayout page, SeatsRemaining seatsRemaining)
+	{
+		final VerticalLayout step1 = new VerticalLayout();
+
+		final Label instructions =  new Label("Step 1/2: Reserve your seats for <b>" + eventName + "</b> by filling in your details here:", ContentMode.HTML);
 
 		final TextField name = new TextField();
 		name.setCaption("Name:");
@@ -99,47 +145,84 @@ public class MyUI extends UI {
 
 		final TextField email = new TextField();
 		email.setCaption("Email:");
-		email.setRequiredIndicatorVisible(true);
+		//email.setRequiredIndicatorVisible(true);
 		binder.forField(email).bind("email");
+
+		final TextField phone = new TextField();
+		phone.setCaption("Phone:");
+		phone.setRequiredIndicatorVisible(true);
+		binder.forField(phone).bind("phone");
+
 
 		final TextField nrOfSeats = new TextField();
 		nrOfSeats.setValue("1");
-		nrOfSeats.setCaption("Nr of seats to reserve:");
+		nrOfSeats.setCaption("Nr of seats to reserve (max 5) (" + seatsRemaining.getSeatsRemaining()  + " remaining)");
 		nrOfSeats.setRequiredIndicatorVisible(true);
 		binder.forField(nrOfSeats).withConverter(new StringToIntegerConverter("Invalid nr of seats")).bind("nrOfSeats");
 
+		RadioButtonGroup<String> discounts =
+				new RadioButtonGroup<>("Discounts");
+		discounts.setSelectedItem("Normal");
+		discounts.setItems("Normal", "MAF-member", "Student");
+		binder.forField(discounts).bind("discount");
+
 		Button button = new Button("Reserve seats");
+		button.setDisableOnClick(true);
 		button.addClickListener( e -> {
-			Reservation reservation = new Reservation();
-			try
-			{
-				binder.writeBean(reservation);
-			}
-			catch(ValidationException e1)
-			{
-				//server side validation fails after client validation has passed?
-			}
-			Key<Reservation> savedReservation = ObjectifyService.ofy().save().entity(reservation).now();
-			Long reservationId = savedReservation.getId();
-			EventReservation eventReservation = CoreFactory.newEventReservationBuilder()
-					.addReservationId("" + reservationId)
-					.addReservationStatus(ReservationStatusTypeEnum.RESERVATION_CONFIRMED)
-					.addUnderName(CoreFactory.newPersonBuilder()
-					              .addName(reservation.getName())
-					              .addEmail(reservation.getEmail()))
-					.addDescription(reservation.getNrOfSeats() + " seats")
-					.addReservationFor(event).build();
-			String asJsonLd = getAsJson(eventReservation);
-			HashMap<String, Object> map = new HashMap<>(new Gson().fromJson(asJsonLd,Map.class));
-			map.put("jsonLd", asJsonLd);
-			sendConfirmationEmail(reservation, map);
-			layout.addComponent(new Label("Thanks " + reservation.getName()
-			+ ", your reservation of " + reservation.getNrOfSeats() + " seat(s) is complete! Your reservation number is " + reservationId + ". An email confirmation has been sent to " + reservation.getEmail()));
+			reserveButtonClicked(page, step1);
 		});
 
-		layout.addComponents(name, email, nrOfSeats, button);
+		Link facebookLink = new Link("Remember to also sign up for the event on facebook!",
+		                             new ExternalResource(facebookEventUrl));
+		facebookLink.setIcon(VaadinIcons.FACEBOOK_SQUARE);
+		facebookLink.setTargetName("_blank");
 
-		setContent(layout);
+		step1.addComponents(instructions, name, email, phone, discounts, nrOfSeats, button, facebookLink);
+		return step1;
+	}
+
+	private void reserveButtonClicked(final VerticalLayout page, final VerticalLayout step1)
+	{
+		Reservation reservation = new Reservation();
+		try
+		{
+			binder.writeBean(reservation);
+		}
+		catch(ValidationException e1)
+		{
+			throw new RuntimeException("server side validation failed after client validation passed, forgot to add a UI component?", e1);
+		}
+		Objectify ofy = ObjectifyService.ofy();
+		SeatsRemaining seatsRemainingCheck = loadSeatsRemaining(ofy);
+		if(seatsRemainingCheck.getSeatsRemaining() < reservation.getNrOfSeats())
+			throw new RuntimeException("Got booked while you were entering your data. Only " + seatsRemainingCheck.getSeatsRemaining()  + " seats are now remaining.");
+		seatsRemainingCheck.setSeatsRemaining(seatsRemainingCheck.getSeatsRemaining() - 1);
+		Map<Key<Object>, Object> savedData = ofy.save().entities(seatsRemainingCheck, reservation).now();
+		Reservation savedReservation = (Reservation) savedData.get(Key.create(reservation));
+		Long reservationId = savedReservation.id;
+		EventReservation eventReservation = CoreFactory.newEventReservationBuilder()
+				.addReservationId("" + reservationId)
+				.addReservationStatus(ReservationStatusTypeEnum.RESERVATION_CONFIRMED)
+				.addUnderName(CoreFactory.newPersonBuilder()
+				              .addName(reservation.getName())
+				              .addEmail(reservation.getEmail())
+				              .addTelephone(reservation.getPhone()))
+				.addDescription(reservation.getNrOfSeats() + " seats")
+				.addReservationFor(event).build();
+		String asJsonLd = getAsJson(eventReservation);
+		HashMap<String, Object> map = new HashMap<>(new Gson().fromJson(asJsonLd,Map.class));
+		map.put("jsonLd", asJsonLd);
+		sendConfirmationEmail(reservation, map);
+		BigDecimal priceToPay = ticketPrice.multiply(new BigDecimal(reservation.getNrOfSeats()))
+				.multiply(determinePriceModifier(reservation.getDiscount()));
+		final VerticalLayout step2 = new VerticalLayout();
+		Label instructions2 =  new Label("Step 2/2: Swish " + priceToPay.longValue() + " to 0705475383 to finalize your reservation. <br/><b>Note:</b>If you can pay the exact amount in cash at the entrance, that's also okay.", ContentMode.HTML);
+		step2.addComponents(new Label("Thanks " + reservation.getName()
+		+ ", your reservation of " + reservation.getNrOfSeats() + " seat(s) is noted! Your reservation number is " + reservationId + ".<br/>An email confirmation has been sent to " + reservation.getEmail() + ". <br/><br/>", ContentMode.HTML), instructions2);
+
+
+		page.removeComponent(step1);
+		page.addComponent(step2);
 	}
 
 	private void sendConfirmationEmail(Reservation reservation, Map<String, Object> registrationJson) throws EmailException
@@ -188,10 +271,44 @@ public class MyUI extends UI {
 		}
 	}
 
+	private static BigDecimal determinePriceModifier(String discount)
+	{
+		switch(discount)
+		{
+		case "MAF-member":
+		case "Student":
+			return memberPricePercentage;
+		case "Normal":
+		default:
+			return BigDecimal.ONE;
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	@WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
 	@VaadinServletConfiguration(ui = MyUI.class, productionMode = true)
 	public static class MyUIServlet extends GAEVaadinServlet {
+
+
+		@Override
+		public void init(ServletConfig servletConfig) throws ServletException
+		{
+			super.init(servletConfig);
+			try (Closeable closeable = ObjectifyService.begin()) {
+				ObjectifyService.ofy().transactNew(new VoidWork(){
+					@Override
+					public void vrun()
+					{
+						Objectify ofy = ObjectifyService.ofy();
+						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, FIRST_EVENT_ID)).now();
+						if(now == null)
+						{
+							ofy.save().entities(new SeatsRemaining().setEventId(FIRST_EVENT_ID).setSeatsRemaining(31)).now();
+						}
+					}
+				});
+			}
+		}
 	}
 
 	@WebFilter(urlPatterns = "/*", asyncSupported = true)
@@ -201,6 +318,7 @@ public class MyUI extends UI {
 		public void init(FilterConfig filterConfig) throws ServletException
 		{
 			ObjectifyService.register(Reservation.class);
+			ObjectifyService.register(SeatsRemaining.class);
 		}
 	}
 }
