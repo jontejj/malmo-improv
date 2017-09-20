@@ -73,8 +73,8 @@ public class MyUI extends UI {
 	private static final BigDecimal ticketPrice = new BigDecimal("40");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.75");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/126158174682437";
-	private static final String eventName = "Malmö Improvisatorium Performance";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/515227948829981";
+	private static final String eventName = "Contagious - an improvisational performance";
 	private static final com.google.schemaorg.core.Event event =
 			CoreFactory.newTheaterEventBuilder()
 			.addUrl(facebookEventUrl)
@@ -106,6 +106,10 @@ public class MyUI extends UI {
 		binder = new BeanValidationBinder<>(Reservation.class);
 
 		final VerticalLayout page = new VerticalLayout();
+
+		//Image banner = new Image("Event Banner", new ClassResource("/contagious.jpg"));
+		//banner.setHeight(30, Unit.PERCENTAGE);
+		//page.addComponent(banner);
 
 		SeatsRemaining seatsRemaining = loadSeatsRemaining(ObjectifyService.ofy());
 
