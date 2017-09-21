@@ -34,6 +34,7 @@ public class Reservation
 	@NotBlank
 	private String phone;
 	@Email
+	@NotBlank
 	private String email;
 
 	@NotBlank

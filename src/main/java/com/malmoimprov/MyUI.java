@@ -43,9 +43,13 @@ import com.vaadin.data.converter.StringToIntegerConverter;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.server.GAEVaadinServlet;
+import com.vaadin.server.Responsive;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Component;
+import com.vaadin.ui.ComponentContainer;
+import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
 import com.vaadin.ui.RadioButtonGroup;
@@ -121,6 +125,7 @@ public class MyUI extends UI {
 		{
 			page.addComponent(fullyBooked());
 		}
+		Responsive.makeResponsive(page);//TODO doesn't work?
 		setContent(page);
 	}
 
@@ -136,11 +141,19 @@ public class MyUI extends UI {
 		return fullyBooked;
 	}
 
-	private VerticalLayout step1(final VerticalLayout page, SeatsRemaining seatsRemaining)
+	private Component step1(final VerticalLayout page, SeatsRemaining seatsRemaining)
 	{
-		final VerticalLayout step1 = new VerticalLayout();
-
+		final VerticalLayout step1Container = new VerticalLayout();
 		final Label instructions =  new Label("Step 1/2: Reserve your seats for <b>" + eventName + "</b> by filling in your details here:", ContentMode.HTML);
+
+		final FormLayout step1 = new FormLayout();
+
+		Button reserveButton = new Button("Reserve seats");
+		reserveButton.setEnabled(false);
+		binder.addValueChangeListener((e) -> reserveButton.setEnabled(binder.isValid()));
+		reserveButton.addClickListener( e -> {
+			reserveButtonClicked(page, step1Container);
+		});
 
 		final TextField name = new TextField();
 		name.setCaption("Name:");
@@ -149,7 +162,7 @@ public class MyUI extends UI {
 
 		final TextField email = new TextField();
 		email.setCaption("Email:");
-		//email.setRequiredIndicatorVisible(true);
+		email.setRequiredIndicatorVisible(true);
 		binder.forField(email).bind("email");
 
 		final TextField phone = new TextField();
@@ -160,32 +173,23 @@ public class MyUI extends UI {
 
 		final TextField nrOfSeats = new TextField();
 		nrOfSeats.setValue("1");
-		nrOfSeats.setCaption("Nr of seats to reserve (max 5) (" + seatsRemaining.getSeatsRemaining()  + " remaining)");
+		nrOfSeats.setCaptionAsHtml(true);
+		nrOfSeats.setCaption("Nr of seats to reserve <br/>(max 5) (" + seatsRemaining.getSeatsRemaining()  + " remaining)");
 		nrOfSeats.setRequiredIndicatorVisible(true);
 		binder.forField(nrOfSeats).withConverter(new StringToIntegerConverter("Invalid nr of seats")).bind("nrOfSeats");
 
 		RadioButtonGroup<String> discounts =
 				new RadioButtonGroup<>("Discounts");
-		discounts.setSelectedItem("Normal");
 		discounts.setItems("Normal", "MAF-member", "Student");
+		discounts.setSelectedItem("Normal");
 		binder.forField(discounts).bind("discount");
 
-		Button button = new Button("Reserve seats");
-		button.setDisableOnClick(true);
-		button.addClickListener( e -> {
-			reserveButtonClicked(page, step1);
-		});
-
-		Link facebookLink = new Link("Remember to also sign up for the event on facebook!",
-		                             new ExternalResource(facebookEventUrl));
-		facebookLink.setIcon(VaadinIcons.FACEBOOK_SQUARE);
-		facebookLink.setTargetName("_blank");
-
-		step1.addComponents(instructions, name, email, phone, discounts, nrOfSeats, button, facebookLink);
-		return step1;
+		step1.addComponents(name, email, phone, discounts, nrOfSeats, reserveButton);
+		step1Container.addComponents(instructions, step1);
+		return step1Container;
 	}
 
-	private void reserveButtonClicked(final VerticalLayout page, final VerticalLayout step1)
+	private void reserveButtonClicked(final ComponentContainer page, final Component step1)
 	{
 		Reservation reservation = new Reservation();
 		try
@@ -219,11 +223,18 @@ public class MyUI extends UI {
 		sendConfirmationEmail(reservation, map);
 		BigDecimal priceToPay = ticketPrice.multiply(new BigDecimal(reservation.getNrOfSeats()))
 				.multiply(determinePriceModifier(reservation.getDiscount()));
+
 		final VerticalLayout step2 = new VerticalLayout();
-		Label instructions2 =  new Label("Step 2/2: Swish " + priceToPay.longValue() + " to 0705475383 to finalize your reservation. <br/><b>Note:</b>If you can pay the exact amount in cash at the entrance, that's also okay.", ContentMode.HTML);
+
+		Label instructions2 =  new Label("<b>Step 2/2</b>: Swish " + priceToPay.longValue() + " SEK to 0705475383 to finalize your reservation. <br/><b>Note:</b>If you can pay the exact amount in cash at the entrance, that's also okay.", ContentMode.HTML);
 		step2.addComponents(new Label("Thanks " + reservation.getName()
 		+ ", your reservation of " + reservation.getNrOfSeats() + " seat(s) is noted! Your reservation number is " + reservationId + ".<br/>An email confirmation has been sent to " + reservation.getEmail() + ". <br/><br/>", ContentMode.HTML), instructions2);
 
+		Link facebookLink = new Link("Remember to also sign up for the event on facebook!",
+		                             new ExternalResource(facebookEventUrl));
+		facebookLink.setIcon(VaadinIcons.FACEBOOK_SQUARE);
+		facebookLink.setTargetName("_blank");
+		step2.addComponent(facebookLink);
 
 		page.removeComponent(step1);
 		page.addComponent(step2);
