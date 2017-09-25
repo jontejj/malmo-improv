@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -262,7 +263,7 @@ public class MyUI extends UI {
 	private BigDecimal priceToPay(long nrOfSeats, String discount)
 	{
 		return ticketPrice.multiply(new BigDecimal(nrOfSeats))
-				.multiply(determinePriceModifier(discount));
+				.multiply(determinePriceModifier(discount)).setScale(0, RoundingMode.HALF_UP);
 	}
 
 	private void sendConfirmationEmail(Reservation reservation, Map<String, Object> registrationJson) throws EmailException
