@@ -111,8 +111,9 @@ public class MyUI extends UI {
 
 		final VerticalLayout page = new VerticalLayout();
 
-		//Image banner = new Image("Event Banner", new ClassResource("/contagious.jpg"));
-		//banner.setHeight(30, Unit.PERCENTAGE);
+		/*Image banner = new Image("Event Banner", new ClassResource("/contagious-background.jpg"));
+		banner.addStyleName("jonatan");
+		banner.setHeight(30, Unit.PERCENTAGE);*/
 		//page.addComponent(banner);
 
 		SeatsRemaining seatsRemaining = loadSeatsRemaining(ObjectifyService.ofy());
@@ -126,6 +127,7 @@ public class MyUI extends UI {
 			page.addComponent(fullyBooked());
 		}
 		Responsive.makeResponsive(page);//TODO doesn't work?
+		//setContent(banner);
 		setContent(page);
 	}
 
@@ -144,13 +146,41 @@ public class MyUI extends UI {
 	private Component step1(final VerticalLayout page, SeatsRemaining seatsRemaining)
 	{
 		final VerticalLayout step1Container = new VerticalLayout();
+		String defaultDiscountType = "Normal";
 		final Label instructions =  new Label("Step 1/2: Reserve your seats for <b>" + eventName + "</b> by filling in your details here:", ContentMode.HTML);
-
+		int defaultNrOfSeats = 1;
+		final Label price = new Label(priceDescription(defaultNrOfSeats, defaultDiscountType));
 		final FormLayout step1 = new FormLayout();
+
+		final TextField nrOfSeats = new TextField();
+		nrOfSeats.setValue("" + defaultNrOfSeats);
+		nrOfSeats.setCaptionAsHtml(true);
+		nrOfSeats.setCaption("Nr of seats to reserve <br/>(max 5) (" + seatsRemaining.getSeatsRemaining()  + " remaining)");
+		nrOfSeats.setRequiredIndicatorVisible(true);
+		binder.forField(nrOfSeats).withConverter(new StringToIntegerConverter("Invalid nr of seats")).bind("nrOfSeats");
+
+		RadioButtonGroup<String> discounts =
+				new RadioButtonGroup<>("Discounts");
+		discounts.setItems("Normal", "MAF-member", "Student");
+
+		discounts.setSelectedItem(defaultDiscountType);
+		binder.forField(discounts).bind("discount");
 
 		Button reserveButton = new Button("Reserve seats");
 		reserveButton.setEnabled(false);
-		binder.addValueChangeListener((e) -> reserveButton.setEnabled(binder.isValid()));
+		binder.addValueChangeListener((e) -> {
+			reserveButton.setEnabled(binder.isValid());
+			try
+			{
+				price.setValue(priceDescription(Long.parseLong(nrOfSeats.getValue()), discounts.getSelectedItem().get()));
+				price.markAsDirty();
+			}
+			catch(NumberFormatException invalid)
+			{
+
+			}
+
+		});
 		reserveButton.addClickListener( e -> {
 			reserveButtonClicked(page, step1Container);
 		});
@@ -170,23 +200,14 @@ public class MyUI extends UI {
 		phone.setRequiredIndicatorVisible(true);
 		binder.forField(phone).bind("phone");
 
-
-		final TextField nrOfSeats = new TextField();
-		nrOfSeats.setValue("1");
-		nrOfSeats.setCaptionAsHtml(true);
-		nrOfSeats.setCaption("Nr of seats to reserve <br/>(max 5) (" + seatsRemaining.getSeatsRemaining()  + " remaining)");
-		nrOfSeats.setRequiredIndicatorVisible(true);
-		binder.forField(nrOfSeats).withConverter(new StringToIntegerConverter("Invalid nr of seats")).bind("nrOfSeats");
-
-		RadioButtonGroup<String> discounts =
-				new RadioButtonGroup<>("Discounts");
-		discounts.setItems("Normal", "MAF-member", "Student");
-		discounts.setSelectedItem("Normal");
-		binder.forField(discounts).bind("discount");
-
 		step1.addComponents(name, email, phone, discounts, nrOfSeats, reserveButton);
-		step1Container.addComponents(instructions, step1);
+		step1Container.addComponents(instructions, step1, price);
 		return step1Container;
+	}
+
+	private String priceDescription(long nrOfSeats, String defaultDiscountType)
+	{
+		return "Total ticket price: " + priceToPay(nrOfSeats, defaultDiscountType) + " SEK";
 	}
 
 	private void reserveButtonClicked(final ComponentContainer page, final Component step1)
@@ -221,8 +242,7 @@ public class MyUI extends UI {
 		HashMap<String, Object> map = new HashMap<>(new Gson().fromJson(asJsonLd,Map.class));
 		map.put("jsonLd", asJsonLd);
 		sendConfirmationEmail(reservation, map);
-		BigDecimal priceToPay = ticketPrice.multiply(new BigDecimal(reservation.getNrOfSeats()))
-				.multiply(determinePriceModifier(reservation.getDiscount()));
+		BigDecimal priceToPay = priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
 
 		final VerticalLayout step2 = new VerticalLayout();
 
@@ -238,6 +258,11 @@ public class MyUI extends UI {
 
 		page.removeComponent(step1);
 		page.addComponent(step2);
+	}
+	private BigDecimal priceToPay(long nrOfSeats, String discount)
+	{
+		return ticketPrice.multiply(new BigDecimal(nrOfSeats))
+				.multiply(determinePriceModifier(discount));
 	}
 
 	private void sendConfirmationEmail(Reservation reservation, Map<String, Object> registrationJson) throws EmailException
