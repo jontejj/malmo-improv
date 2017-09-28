@@ -42,6 +42,7 @@ import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationException;
 import com.vaadin.data.converter.StringToIntegerConverter;
 import com.vaadin.icons.VaadinIcons;
+import com.vaadin.server.ClassResource;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.server.GAEVaadinServlet;
 import com.vaadin.server.Responsive;
@@ -51,6 +52,7 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.ComponentContainer;
 import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
 import com.vaadin.ui.RadioButtonGroup;
@@ -140,7 +142,11 @@ public class MyUI extends UI {
 	private VerticalLayout fullyBooked()
 	{
 		final VerticalLayout fullyBooked = new VerticalLayout();
-		fullyBooked.addComponent(new Label("Fully booked! Better luck next time!"));
+		//fullyBooked.addComponent(new Label("Fully booked! Better luck next time!"));
+		Image banner = new Image(eventName + " sold out. Better luck next time!", new ClassResource("/contagious-soldout.jpg"));
+		//banner.addStyleName("jonatan");
+		banner.setWidth(800, Unit.PIXELS);
+		fullyBooked.addComponent(banner);
 		return fullyBooked;
 	}
 
