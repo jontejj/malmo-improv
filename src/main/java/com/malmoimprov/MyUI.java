@@ -146,7 +146,13 @@ public class MyUI extends UI {
 		Image banner = new Image(eventName + " sold out. Better luck next time!", new ClassResource("/contagious-soldout.jpg"));
 		//banner.addStyleName("jonatan");
 		banner.setWidth(800, Unit.PIXELS);
-		fullyBooked.addComponent(banner);
+
+		Link facebookLink = new Link("Follow us on facebook for future events!",
+		                             new ExternalResource("https://www.facebook.com/improvisatorium/"));
+		facebookLink.setIcon(VaadinIcons.FACEBOOK_SQUARE);
+		facebookLink.setTargetName("_blank");
+		fullyBooked.addComponents(banner, facebookLink);
+
 		return fullyBooked;
 	}
 
