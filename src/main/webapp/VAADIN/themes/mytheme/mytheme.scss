@@ -3,7 +3,7 @@
 // Global variable overrides. Must be declared before importing Valo.
 
 // Defines the plaintext font size, weight and family. Font size affects general component sizing.
-//$v-font-size: 16px;
+$v-font-size: 16px;
 //$v-font-weight: 300;
 //$v-font-family: "Open Sans", sans-serif;
 
@@ -12,12 +12,13 @@
 //$v-border-radius: 4px;
 
 // Affects the color of some component elements, e.g Button, Panel title, etc
-//$v-background-color: hsl(210, 0%, 98%);
+$v-background-color: hsl(210, 0%, 98%);
+//$v-background-color: hsl(0, 50%, 50%);
 // Affects the color of content areas, e.g  Panel and Window content, TextField input etc
 //$v-app-background-color: $v-background-color;
 
 // Affects the visual appearance of all components
-//$v-gradient: v-linear 8%;
+$v-gradient: v-linear 8%;
 //$v-bevel-depth: 30%;
 //$v-shadow-opacity: 5%;
 
@@ -29,10 +30,11 @@
 // For more information, see: https://vaadin.com/book/-/page/themes.valo.html
 // Example variants can be copy/pasted from https://vaadin.com/wiki/-/wiki/Main/Valo+Examples
 
+$v-app-loading-text: "Loading Resources...";
+
 @import "../valo/valo.scss";
 
 @mixin mytheme {
   @include valo;
-
   // Insert your own theme rules here
 }

@@ -14,6 +14,11 @@
  */
 package com.malmoimprov;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.io.Serializable;
+import java.util.Date;
+
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
@@ -22,11 +27,16 @@ import org.hibernate.validator.constraints.NotBlank;
 
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.condition.IfDefault;
 
 @Entity
-public class Reservation
+public class Reservation implements Serializable
 {
-	@Id Long id;
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	Long id;
 
 	@NotBlank
 	private String name;
@@ -42,46 +52,125 @@ public class Reservation
 
 	@Min(1)
 	@Max(5)
-	private int nrOfSeats;
+	private Integer nrOfSeats;
+
+	private Boolean paid = false;
+
+	@Index
+	private Boolean cancelled = false;
+
+	@Index(IfDefault.class)
+	private Boolean sentReminderAboutEvent = false;
+
+	private long eventId;
+
+	private Date creationTime;
 
 	public String getName()
 	{
 		return name;
 	}
+
 	public void setName(String name)
 	{
 		this.name = name;
 	}
+
 	public String getEmail()
 	{
 		return email;
 	}
+
 	public void setEmail(String email)
 	{
 		this.email = email;
 	}
-	public int getNrOfSeats()
+
+	public Integer getNrOfSeats()
 	{
 		return nrOfSeats;
 	}
-	public void setNrOfSeats(int nrOfSeats)
+
+	public void setNrOfSeats(Integer nrOfSeats)
 	{
 		this.nrOfSeats = nrOfSeats;
 	}
+
 	public String getDiscount()
 	{
 		return discount;
 	}
+
 	public void setDiscount(String discount)
 	{
 		this.discount = discount;
 	}
+
 	public String getPhone()
 	{
 		return phone;
 	}
+
 	public void setPhone(String phone)
 	{
 		this.phone = phone;
+	}
+
+	public Boolean getPaid()
+	{
+		return paid;
+	}
+
+	public void setPaid(Boolean paid)
+	{
+		this.paid = checkNotNull(paid);
+	}
+
+	public Boolean getCancelled()
+	{
+		return cancelled;
+	}
+
+	public void setCancelled(Boolean cancelled)
+	{
+		this.cancelled = cancelled;
+	}
+
+	public Boolean getSentReminderAboutEvent()
+	{
+		return sentReminderAboutEvent;
+	}
+
+	public void setSentReminderAboutEvent(Boolean sentReminderAboutEvent)
+	{
+		this.sentReminderAboutEvent = sentReminderAboutEvent;
+	}
+
+	public long getEventId()
+	{
+		return eventId;
+	}
+
+	public void setEventId(long eventId)
+	{
+		this.eventId = eventId;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Reservation [eventId=" + eventId + ", id=" + id + ", name=" + name + ", phone=" + phone + ", email=" + email + ", discount="
+				+ discount + ", nrOfSeats=" + nrOfSeats + ", paid=" + paid + ", cancelled=" + cancelled + ", sentReminderAboutEvent="
+				+ sentReminderAboutEvent + "]";
+	}
+
+	public Date getCreationTime()
+	{
+		return creationTime;
+	}
+
+	public void setCreationTime(Date creationTime)
+	{
+		this.creationTime = creationTime;
 	}
 }

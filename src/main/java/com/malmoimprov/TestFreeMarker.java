@@ -30,10 +30,11 @@ import freemarker.template.TemplateNotFoundException;
 
 public class TestFreeMarker
 {
-	public static void main(String[] args) throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException
+	public static void test(String[] args)
+			throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException
 	{
 		/* ------------------------------------------------------------------------ */
-		/* You should do this ONLY ONCE in the whole application life-cycle:        */
+		/* You should do this ONLY ONCE in the whole application life-cycle: */
 
 		/* Create and adjust the configuration singleton */
 		Configuration cfg = new Configuration(Configuration.VERSION_2_3_25);
@@ -43,7 +44,7 @@ public class TestFreeMarker
 		cfg.setLogTemplateExceptions(false);
 
 		/* ------------------------------------------------------------------------ */
-		/* You usually do these for MULTIPLE TIMES in the application life-cycle:   */
+		/* You usually do these for MULTIPLE TIMES in the application life-cycle: */
 
 		Map root = new HashMap();
 		root.put("name", "Big Joe");

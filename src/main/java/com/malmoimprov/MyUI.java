@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -20,7 +21,14 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
+
+import com.google.appengine.api.users.User;
+import com.google.appengine.api.users.UserService;
+import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.base.Charsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
@@ -37,6 +45,7 @@ import com.googlecode.objectify.VoidWork;
 import com.googlecode.objectify.util.Closeable;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
+import com.vaadin.annotations.Viewport;
 import com.vaadin.data.BeanValidationBinder;
 import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationException;
@@ -47,6 +56,7 @@ import com.vaadin.server.ExternalResource;
 import com.vaadin.server.GAEVaadinServlet;
 import com.vaadin.server.Responsive;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.WebBrowser;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
@@ -73,30 +83,26 @@ import freemarker.template.TemplateExceptionHandler;
  * overridden to add component to the user interface and initialize non-component functionality.
  */
 @Theme("mytheme")
-public class MyUI extends UI {
+@Viewport("initial-scale=1.0, width=device-width")
+public class MyUI extends UI
+{
 
-	//private static final Logger log = Logger.getLogger(MyUI.class.getName());
-	private static final String FIRST_EVENT_ID = "1";
+	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
+	private static final long EVENT_ID = 2;
+	private static final String CURRENCY = "SEK";
+	private static final String PHONENUMBER_TO_PAY_TO = "0705475383";
+	private static final long initialSeatCapacity = 31;
 	private static final BigDecimal ticketPrice = new BigDecimal("40");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.75");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/515227948829981";
-	private static final String eventName = "Contagious - an improvisational performance";
-	private static final com.google.schemaorg.core.Event event =
-			CoreFactory.newTheaterEventBuilder()
-			.addUrl(facebookEventUrl)
-			.addName(eventName)
-			.addOrganizer("Malmö Improvisatorium")
-			.addStartDate("2017-10-14T18:30:00+02:00")
-			.addDuration("PT1H30M")
+	private static final String facebookEventUrl = "https://www.facebook.com/events/186061025305237";
+	private static final String eventName = "My Unicorn Lover - Improvisation Performance";
+	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2017-12-09T19:30:00+02:00").addDuration("PT1H30M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
-			             .addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12")
-			                         .addAddressLocality("Malmö")
-			                         .addAddressRegion("SE-M")
-			                         .addPostalCode("21152")
-			                         .addAddressCountry("SE")))
-			//.addProperty("customPropertyName", "customPropertyValue")
-			.build();
+					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
+							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
+			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();
 	private static final Configuration cfg;
 	static
 	{
@@ -109,19 +115,82 @@ public class MyUI extends UI {
 	private Binder<Reservation> binder;
 
 	@Override
-	protected void init(VaadinRequest vaadinRequest) {
+	protected void init(VaadinRequest vaadinRequest)
+	{
 		binder = new BeanValidationBinder<>(Reservation.class);
 
 		final VerticalLayout page = new VerticalLayout();
 
-		/*Image banner = new Image("Event Banner", new ClassResource("/contagious-background.jpg"));
+		Image banner = new Image("", new ClassResource("/my-unicorn-lover-poster.jpg"));
 		banner.addStyleName("jonatan");
-		banner.setHeight(30, Unit.PERCENTAGE);*/
-		//page.addComponent(banner);
+		banner.setWidth(400, Unit.PIXELS);
+		page.addComponent(banner);
 
 		SeatsRemaining seatsRemaining = loadSeatsRemaining(ObjectifyService.ofy());
 
-		if(seatsRemaining.getSeatsRemaining() > 0)
+		if(vaadinRequest.getParameter("admin") != null)
+		{
+			UserService userService = UserServiceFactory.getUserService();
+			if(userService.isUserLoggedIn())
+			{
+				User currentUser = userService.getCurrentUser();
+				boolean isAdmin = currentUser.getEmail().equals("JonteJJ@gmail.com");
+				if(isAdmin)
+				{
+					GridBasedCrudComponent<Reservation> reservations = new GridBasedCrudComponent<>(Reservation.class);
+					reservations.getCrudFormFactory().setUseBeanValidation(true);
+					reservations.setUpdateOperation(updatedReservation -> {
+						ObjectifyService.ofy().save().entity(updatedReservation).now();
+						return updatedReservation;
+					});
+					reservations.setFindAllOperation(() -> ObjectifyService.ofy().load().type(Reservation.class).list());
+					page.addComponent(reservations);
+					page.addComponent(new Button("Send 10 event reminders", (e) -> {
+						Objectify ofy = ObjectifyService.ofy();
+						/*
+						 * List<Reservation> list = ofy.load().type(Reservation.class).list();
+						 * list.forEach(r ->
+						 * {
+						 * //Test email
+						 * if(r.getEmail().equals("jontejj@gmail.com"))
+						 * {
+						 * sendReminderEmail(r);
+						 * Label label = new Label(r.toString());
+						 * label.setWidth(100, Unit.PERCENTAGE);
+						 * page.addComponent(label);
+						 * }
+						 * }
+						 */
+						List<Reservation> list = ofy.load().type(Reservation.class).filter("cancelled =", false)
+								.filter("sentReminderAboutEvent =", false).limit(10).list();
+						list.forEach(r -> {
+							sendReminderEmail(r);
+							r.setSentReminderAboutEvent(true);
+							ofy.save().entities(r).now();
+						});
+						String reservationsAsStr = list.toString();
+						Label label = new Label(reservationsAsStr);
+						label.setWidth(100, Unit.PERCENTAGE);
+						page.addComponent(label);
+					}));
+					page.addComponent(new Button("Migrate reservations", (e) -> {
+						Objectify ofy = ObjectifyService.ofy();
+						List<Reservation> list = ofy.load().type(Reservation.class).list();
+						ofy.save().entities(list).now();
+					}));
+				}
+				else
+				{
+					page.addComponent(new Label("Your user is not authorized to manage reservations"));
+				}
+				page.addComponent(new Link("Logout", new ExternalResource(userService.createLogoutURL("/"))));
+			}
+			else
+			{
+				page.addComponent(new Link("Login", new ExternalResource(userService.createLoginURL("/?admin"))));
+			}
+		}
+		else if(seatsRemaining.getSeatsRemaining() > 0)
 		{
 			page.addComponent(step1(page, seatsRemaining));
 		}
@@ -129,29 +198,33 @@ public class MyUI extends UI {
 		{
 			page.addComponent(fullyBooked());
 		}
-		Responsive.makeResponsive(page);//TODO doesn't work?
-		//setContent(banner);
+		Responsive.makeResponsive(page);// TODO doesn't work?
+		// setContent(banner);
 		setContent(page);
 	}
 
 	private SeatsRemaining loadSeatsRemaining(Objectify ofy)
 	{
-		return ofy.load().key(Key.create(SeatsRemaining.class, FIRST_EVENT_ID)).now();
+		return ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
 	}
 
 	private VerticalLayout fullyBooked()
 	{
 		final VerticalLayout fullyBooked = new VerticalLayout();
-		//fullyBooked.addComponent(new Label("Fully booked! Better luck next time!"));
-		Image banner = new Image(eventName + " sold out. Better luck next time!", new ClassResource("/contagious-soldout.jpg"));
-		//banner.addStyleName("jonatan");
-		banner.setWidth(800, Unit.PIXELS);
+		Label text = new Label(eventName + " sold out. Better luck next time!");
+		text.addStyleName("small");
+		text.setWidth(100, Unit.PERCENTAGE);
+		fullyBooked.addComponent(text);
+		// Image banner = new Image("", new ClassResource("/contagious-soldout.jpg"));
+		// banner.addStyleName("jonatan");
+		// banner.setWidth(100, Unit.PERCENTAGE);
 
-		Link facebookLink = new Link("Follow us on facebook for future events!",
-		                             new ExternalResource("https://www.facebook.com/improvisatorium/"));
+		Link facebookLink = new Link("Follow us on facebook for future events!", new ExternalResource("https://www.facebook.com/improvisatorium/"));
 		facebookLink.setIcon(VaadinIcons.FACEBOOK_SQUARE);
+		facebookLink.addStyleName("small");
 		facebookLink.setTargetName("_blank");
-		fullyBooked.addComponents(banner, facebookLink);
+		// fullyBooked.addComponents(text, banner, facebookLink);
+		fullyBooked.addComponents(text, facebookLink);
 
 		return fullyBooked;
 	}
@@ -160,7 +233,9 @@ public class MyUI extends UI {
 	{
 		final VerticalLayout step1Container = new VerticalLayout();
 		String defaultDiscountType = "Normal";
-		final Label instructions =  new Label("Step 1/2: Reserve your seats for <b>" + eventName + "</b> by filling in your details here:", ContentMode.HTML);
+		final Label instructions = new Label("Step 1/2: Reserve your seats for <b>" + eventName + "</b> by filling in your details here:",
+				ContentMode.HTML);
+		instructions.setWidth(100, Unit.PERCENTAGE);
 		int defaultNrOfSeats = 1;
 		final Label price = new Label(priceDescription(defaultNrOfSeats, defaultDiscountType));
 		final FormLayout step1 = new FormLayout();
@@ -168,12 +243,11 @@ public class MyUI extends UI {
 		final TextField nrOfSeats = new TextField();
 		nrOfSeats.setValue("" + defaultNrOfSeats);
 		nrOfSeats.setCaptionAsHtml(true);
-		nrOfSeats.setCaption("Nr of seats to reserve <br/>(max 5) (" + seatsRemaining.getSeatsRemaining()  + " remaining)");
+		nrOfSeats.setCaption("Nr of seats to reserve <br/>(max 5) (" + seatsRemaining.getSeatsRemaining() + " remaining)");
 		nrOfSeats.setRequiredIndicatorVisible(true);
 		binder.forField(nrOfSeats).withConverter(new StringToIntegerConverter("Invalid nr of seats")).bind("nrOfSeats");
 
-		RadioButtonGroup<String> discounts =
-				new RadioButtonGroup<>("Discounts");
+		RadioButtonGroup<String> discounts = new RadioButtonGroup<>("Discounts");
 		discounts.setItems("Normal", "MAF-member", "Student");
 
 		discounts.setSelectedItem(defaultDiscountType);
@@ -194,7 +268,7 @@ public class MyUI extends UI {
 			}
 
 		});
-		reserveButton.addClickListener( e -> {
+		reserveButton.addClickListener(e -> {
 			reserveButtonClicked(page, step1Container);
 		});
 
@@ -220,7 +294,7 @@ public class MyUI extends UI {
 
 	private String priceDescription(long nrOfSeats, String defaultDiscountType)
 	{
-		return "Total ticket price: " + priceToPay(nrOfSeats, defaultDiscountType) + " SEK";
+		return "Total ticket price: " + priceToPay(nrOfSeats, defaultDiscountType) + " " + CURRENCY;
 	}
 
 	private void reserveButtonClicked(final ComponentContainer page, final Component step1)
@@ -234,37 +308,44 @@ public class MyUI extends UI {
 		{
 			throw new RuntimeException("server side validation failed after client validation passed, forgot to add a UI component?", e1);
 		}
+		WebBrowser webBrowser = UI.getCurrent().getPage().getWebBrowser();
+		reservation.setCreationTime(webBrowser.getCurrentDate());
+		reservation.setEventId(EVENT_ID);
+		BigDecimal priceToPay = priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
+
 		Objectify ofy = ObjectifyService.ofy();
 		SeatsRemaining seatsRemainingCheck = loadSeatsRemaining(ofy);
 		if(seatsRemainingCheck.getSeatsRemaining() < reservation.getNrOfSeats())
-			throw new RuntimeException("Got booked while you were entering your data. Only " + seatsRemainingCheck.getSeatsRemaining()  + " seats are now remaining.");
+			throw new RuntimeException(
+					"Got booked while you were entering your data. Only " + seatsRemainingCheck.getSeatsRemaining() + " seats are now remaining.");
 		seatsRemainingCheck.setSeatsRemaining(seatsRemainingCheck.getSeatsRemaining() - reservation.getNrOfSeats());
 		Map<Key<Object>, Object> savedData = ofy.save().entities(seatsRemainingCheck, reservation).now();
 		Reservation savedReservation = (Reservation) savedData.get(Key.create(reservation));
 		Long reservationId = savedReservation.id;
-		EventReservation eventReservation = CoreFactory.newEventReservationBuilder()
-				.addReservationId("" + reservationId)
-				.addReservationStatus(ReservationStatusTypeEnum.RESERVATION_CONFIRMED)
-				.addUnderName(CoreFactory.newPersonBuilder()
-				              .addName(reservation.getName())
-				              .addEmail(reservation.getEmail())
-				              .addTelephone(reservation.getPhone()))
-				.addDescription(reservation.getNrOfSeats() + " seats")
-				.addReservationFor(event).build();
+		EventReservation eventReservation = CoreFactory.newEventReservationBuilder().addReservationId("" + reservationId)
+				.addReservationStatus(ReservationStatusTypeEnum.RESERVATION_PENDING)
+				.addUnderName(CoreFactory.newPersonBuilder().addName(reservation.getName()).addEmail(reservation.getEmail())
+						.addTelephone(reservation.getPhone()))
+				.addDescription(reservation.getNrOfSeats() + " seats").addReservationFor(event)
+				.addTotalPrice(CoreFactory.newPriceSpecificationBuilder().addPriceCurrency(CURRENCY).addPrice(priceToPay.toString())).build();
 		String asJsonLd = getAsJson(eventReservation);
-		HashMap<String, Object> map = new HashMap<>(new Gson().fromJson(asJsonLd,Map.class));
+
+		HashMap<String, Object> map = new HashMap<>(new Gson().fromJson(asJsonLd, Map.class));
 		map.put("jsonLd", asJsonLd);
 		sendConfirmationEmail(reservation, map);
-		BigDecimal priceToPay = priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
 
 		final VerticalLayout step2 = new VerticalLayout();
 
-		Label instructions2 =  new Label("<b>Step 2/2</b>: Swish " + priceToPay.longValue() + " SEK to 0705475383 to finalize your reservation. <br/><b>Note:</b>If you can pay the exact amount in cash at the entrance, that's also okay.", ContentMode.HTML);
-		step2.addComponents(new Label("Thanks " + reservation.getName()
-		+ ", your reservation of " + reservation.getNrOfSeats() + " seat(s) is noted! Your reservation number is " + reservationId + ".<br/>An email confirmation has been sent to " + reservation.getEmail() + ". <br/><br/>", ContentMode.HTML), instructions2);
+		Label instructions2 = new Label("<b>Step 2/2</b>: Swish " + priceToPay.longValue() + " " + CURRENCY + " to " + PHONENUMBER_TO_PAY_TO
+				+ " to finalize your reservation. <br/><b>Note:</b>Your tickets are reserved for 3 days. Please remember to buy them via swish to finish the booking.",
+				ContentMode.HTML);
+		step2.addComponents(new Label(
+				"Thanks " + reservation.getName() + ", your reservation of " + reservation.getNrOfSeats()
+						+ " seat(s) is noted! Your reservation number is " + reservationId + ".<br/>An email confirmation has been sent to "
+						+ reservation.getEmail() + ". <br/><br/>",
+				ContentMode.HTML), instructions2);
 
-		Link facebookLink = new Link("Remember to also sign up for the event on facebook!",
-		                             new ExternalResource(facebookEventUrl));
+		Link facebookLink = new Link("Remember to also sign up for the event on facebook!", new ExternalResource(facebookEventUrl));
 		facebookLink.setIcon(VaadinIcons.FACEBOOK_SQUARE);
 		facebookLink.setTargetName("_blank");
 		step2.addComponent(facebookLink);
@@ -272,10 +353,10 @@ public class MyUI extends UI {
 		page.removeComponent(step1);
 		page.addComponent(step2);
 	}
+
 	private BigDecimal priceToPay(long nrOfSeats, String discount)
 	{
-		return ticketPrice.multiply(new BigDecimal(nrOfSeats))
-				.multiply(determinePriceModifier(discount)).setScale(0, RoundingMode.HALF_UP);
+		return ticketPrice.multiply(new BigDecimal(nrOfSeats)).multiply(determinePriceModifier(discount)).setScale(0, RoundingMode.HALF_UP);
 	}
 
 	private void sendConfirmationEmail(Reservation reservation, Map<String, Object> registrationJson) throws EmailException
@@ -283,28 +364,54 @@ public class MyUI extends UI {
 		Properties props = new Properties();
 		Session session = Session.getDefaultInstance(props, null);
 
-		try {
+		try
+		{
 			MimeMessage msg = new MimeMessage(session);
 			msg.setFrom(new InternetAddress("jontejj@gmail.com", "Malmö Improvisatorium Reservations"));
-			msg.addRecipient(Message.RecipientType.TO,
-			                 new InternetAddress(reservation.getEmail(), reservation.getName()));
-			msg.setSubject(reservation.getName() + " your reservation is complete");
+			msg.addRecipient(Message.RecipientType.TO, new InternetAddress(reservation.getEmail(), reservation.getName()));
+			msg.setSubject(reservation.getName() + " your reservation is partially completed");
 
-			String emailText = generateReservationConfirmationEmail(registrationJson);
+			String emailText = generateTemplateWithData("event-reservation-confirmation-email.ftlh", registrationJson);
 			System.out.println(emailText);
 			msg.setText(emailText, Charsets.UTF_8.toString(), "html");
 			Transport.send(msg);
-		}catch (MessagingException | UnsupportedEncodingException ex) {
+		}
+		catch(MessagingException | UnsupportedEncodingException ex)
+		{
 			throw new EmailException("Failed to send reservation email to " + reservation.getEmail(), ex);
 		}
 	}
 
-	private String generateReservationConfirmationEmail(Map<String, Object> registrationJson) throws EmailException
+	private void sendReminderEmail(Reservation reservation) throws EmailException
 	{
-		try {
-			Template temp = cfg.getTemplate("event-reservation-confirmation-email.ftlh");
+		Properties props = new Properties();
+		Session session = Session.getDefaultInstance(props, null);
+
+		try
+		{
+			MimeMessage msg = new MimeMessage(session);
+			msg.setFrom(new InternetAddress("jontejj@gmail.com", "Malmö Improvisatorium Reservations"));
+			msg.addRecipient(Message.RecipientType.TO, new InternetAddress(reservation.getEmail(), reservation.getName()));
+			msg.setSubject("See you soon @ " + eventName + "!");
+
+			String emailText = generateTemplateWithData("reservation-reminder.ftlh", reservation);
+			System.out.println(emailText);
+			msg.setText(emailText, Charsets.UTF_8.toString(), "html");
+			Transport.send(msg);
+		}
+		catch(MessagingException | UnsupportedEncodingException ex)
+		{
+			throw new EmailException("Failed to send reservation email to " + reservation.getEmail(), ex);
+		}
+	}
+
+	private static String generateTemplateWithData(String templateName, Object rootObject) throws EmailException
+	{
+		try
+		{
+			Template temp = cfg.getTemplate(templateName);
 			StringWriter out = new StringWriter();
-			temp.process(registrationJson, out);
+			temp.process(rootObject, out);
 			return out.toString();
 		}
 		catch(IOException | TemplateException ex)
@@ -317,9 +424,12 @@ public class MyUI extends UI {
 
 	public String getAsJson(EventReservation reservation)
 	{
-		try {
+		try
+		{
 			return serializer.serialize(reservation);
-		} catch (JsonLdSyntaxException | JsonIOException e) {
+		}
+		catch(JsonLdSyntaxException | JsonIOException e)
+		{
 			throw new RuntimeException("Failed to generate schema.org string", e);
 		}
 	}
@@ -340,27 +450,41 @@ public class MyUI extends UI {
 	@SuppressWarnings("deprecation")
 	@WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
 	@VaadinServletConfiguration(ui = MyUI.class, productionMode = true)
-	public static class MyUIServlet extends GAEVaadinServlet {
-
+	public static class MyUIServlet extends GAEVaadinServlet
+	{
 
 		@Override
 		public void init(ServletConfig servletConfig) throws ServletException
 		{
 			super.init(servletConfig);
-			try (Closeable closeable = ObjectifyService.begin()) {
+			try(Closeable closeable = ObjectifyService.begin())
+			{
 				ObjectifyService.ofy().transactNew(new VoidWork(){
 					@Override
 					public void vrun()
 					{
 						Objectify ofy = ObjectifyService.ofy();
-						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, FIRST_EVENT_ID)).now();
+						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
 						if(now == null)
 						{
-							ofy.save().entities(new SeatsRemaining().setEventId(FIRST_EVENT_ID).setSeatsRemaining(31)).now();
+							ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
 						}
 					}
 				});
 			}
+		}
+
+		@Override
+		protected void service(HttpServletRequest unwrappedRequest, HttpServletResponse unwrappedResponse) throws ServletException, IOException
+		{
+			super.service(unwrappedRequest, unwrappedResponse);
+		}
+
+		@Override
+		public void destroy()
+		{
+			super.destroy();
+			// MemcacheServiceFactory.getMemcacheService().clearAll();
 		}
 	}
 
