@@ -122,6 +122,12 @@
 			<artifactId>core</artifactId>
 			<version>3.3.1</version>
 		</dependency>
+		<!-- To send emails -->
+		<dependency>
+			<groupId>com.sendgrid</groupId>
+			<artifactId>sendgrid-java</artifactId>
+			<version>4.1.2</version>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -2,20 +2,12 @@ package com.malmoimprov;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -29,7 +21,8 @@ import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
-import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.schemaorg.JsonLdSerializer;
@@ -43,6 +36,13 @@ import com.googlecode.objectify.ObjectifyFilter;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
 import com.googlecode.objectify.util.Closeable;
+import com.sendgrid.Content;
+import com.sendgrid.Email;
+import com.sendgrid.Mail;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.annotations.Viewport;
@@ -62,6 +62,8 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.ComponentContainer;
 import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.Grid;
+import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
@@ -69,6 +71,7 @@ import com.vaadin.ui.RadioButtonGroup;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.renderers.ButtonRenderer;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -92,8 +95,8 @@ public class MyUI extends UI
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0705475383";
 	private static final long initialSeatCapacity = 31;
-	private static final BigDecimal ticketPrice = new BigDecimal("40");
-	private static final BigDecimal memberPricePercentage = new BigDecimal("0.75");
+	private static final BigDecimal ticketPrice = new BigDecimal("50");
+	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 
 	private static final String facebookEventUrl = "https://www.facebook.com/events/186061025305237";
 	private static final String eventName = "My Unicorn Lover - Improvisation Performance";
@@ -134,50 +137,11 @@ public class MyUI extends UI
 			if(userService.isUserLoggedIn())
 			{
 				User currentUser = userService.getCurrentUser();
-				boolean isAdmin = currentUser.getEmail().equals("JonteJJ@gmail.com");
+				ImmutableSet<String> admins = ImmutableSet.of("JonteJJ@gmail.com", "sara.zeidi58@gmail.com");
+				boolean isAdmin = admins.contains(currentUser.getEmail());
 				if(isAdmin)
 				{
-					GridBasedCrudComponent<Reservation> reservations = new GridBasedCrudComponent<>(Reservation.class);
-					reservations.getCrudFormFactory().setUseBeanValidation(true);
-					reservations.setUpdateOperation(updatedReservation -> {
-						ObjectifyService.ofy().save().entity(updatedReservation).now();
-						return updatedReservation;
-					});
-					reservations.setFindAllOperation(() -> ObjectifyService.ofy().load().type(Reservation.class).list());
-					page.addComponent(reservations);
-					page.addComponent(new Button("Send 10 event reminders", (e) -> {
-						Objectify ofy = ObjectifyService.ofy();
-						/*
-						 * List<Reservation> list = ofy.load().type(Reservation.class).list();
-						 * list.forEach(r ->
-						 * {
-						 * //Test email
-						 * if(r.getEmail().equals("jontejj@gmail.com"))
-						 * {
-						 * sendReminderEmail(r);
-						 * Label label = new Label(r.toString());
-						 * label.setWidth(100, Unit.PERCENTAGE);
-						 * page.addComponent(label);
-						 * }
-						 * }
-						 */
-						List<Reservation> list = ofy.load().type(Reservation.class).filter("cancelled =", false)
-								.filter("sentReminderAboutEvent =", false).limit(10).list();
-						list.forEach(r -> {
-							sendReminderEmail(r);
-							r.setSentReminderAboutEvent(true);
-							ofy.save().entities(r).now();
-						});
-						String reservationsAsStr = list.toString();
-						Label label = new Label(reservationsAsStr);
-						label.setWidth(100, Unit.PERCENTAGE);
-						page.addComponent(label);
-					}));
-					page.addComponent(new Button("Migrate reservations", (e) -> {
-						Objectify ofy = ObjectifyService.ofy();
-						List<Reservation> list = ofy.load().type(Reservation.class).list();
-						ofy.save().entities(list).now();
-					}));
+					loggedInPage(page);
 				}
 				else
 				{
@@ -203,9 +167,146 @@ public class MyUI extends UI
 		setContent(page);
 	}
 
+	private void loggedInPage(final VerticalLayout page)
+	{
+		GridBasedCrudComponent<Reservation> reservations = new GridBasedCrudComponent<>(Reservation.class);
+		reservations.getCrudFormFactory().setUseBeanValidation(true);
+		reservations.setUpdateOperation(updatedReservation -> {
+			Objectify ofy = ObjectifyService.ofy();
+			Reservation oldReservation = ofy.load().entity(updatedReservation).now();
+			List<Object> entititesToUpdate = Lists.newArrayList(updatedReservation);
+			if(!oldReservation.getCancelled() && updatedReservation.getCancelled())
+			{
+				SeatsRemaining seatsRemainingCheck = loadSeatsRemaining(ofy);
+				seatsRemainingCheck.setSeatsRemaining(seatsRemainingCheck.getSeatsRemaining() + updatedReservation.getNrOfSeats());
+				entititesToUpdate.add(seatsRemainingCheck);
+			}
+			ofy.save().entities(entititesToUpdate).now();
+			return updatedReservation;
+		});
+		reservations.setFindAllOperation(() -> ObjectifyService.ofy().load().type(Reservation.class).filter("eventId = ", EVENT_ID).list());
+		page.addComponent(reservations);
+		page.addComponent(new Button("Send 10 event reminders", (e) -> {
+			sendEventReminders(page, 10);
+		}));
+		page.addComponent(new Button("Send 10 event confirmations to people who paid", (e) -> {
+			sendEventConfirmations(page, 10);
+		}));
+		page.addComponent(new Button("Take attendance", (e) -> {
+			attendanceList(page);
+		}));
+		page.addComponent(new Button("Migrate reservations", (e) -> {
+			migrateReservations();
+		}));
+	}
+
+	private void attendanceList(VerticalLayout page)
+	{
+		List<Reservation> list = ObjectifyService.ofy().load().type(Reservation.class).filter("eventId = ", EVENT_ID).filter("cancelled =", false)
+				.list();
+
+		// Have some data
+		// Create a grid bound to the list
+		Grid<Reservation> grid = new Grid<>();
+		grid.setWidth(100, Unit.PERCENTAGE);
+		grid.setItems(list);
+		grid.addColumn(Reservation::getName).setCaption("Name");
+		grid.addColumn(Reservation::getPhone).setCaption("Phone");
+		grid.addColumn(Reservation::getNrOfSeats).setCaption("Seats");
+		grid.addColumn(MyUI::priceToPay).setCaption("Price");
+		grid.addColumn(Reservation::getPaid).setCaption("Paid");
+		grid.setSelectionMode(SelectionMode.NONE);
+		// grid.addColumn(Reservation::getAttended).setCaption("Attended");
+
+		grid.addColumn(person -> "Attended", new ButtonRenderer<Reservation>(clickEvent -> {
+			Reservation attended = clickEvent.getItem();
+			attended.setAttended(true);
+			ObjectifyService.ofy().save().entities(attended).now();
+			list.remove(attended);
+			grid.setItems(list);
+		}));
+
+		BigDecimal totalPrepaid = list.stream().filter(r -> r.getPaid()).map(MyUI::priceToPay).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		page.addComponent(grid);
+
+		page.addComponent(new Label("Total prepaid: " + totalPrepaid));
+	}
+
+	private void sendEventConfirmations(VerticalLayout page, int nrOfConfirmationsToSend)
+	{
+		Objectify ofy = ObjectifyService.ofy();
+		// List<Reservation> list = ofy.load().type(Reservation.class).list();
+		// list.forEach(r -> {
+		// // Test email
+		// if(r.getEmail().equals("jontejj@gmail.com"))
+		// {
+		// sendConfirmationEmail(r);
+		// Label label = new Label(r.toString());
+		// label.setWidth(100, Unit.PERCENTAGE);
+		// page.addComponent(label);
+		// }
+		// });
+		// return;
+
+		List<Reservation> list = ofy.load().type(Reservation.class).filter("eventId = ", EVENT_ID).filter("cancelled =", false)
+				.filter("sentConfirmationAboutEvent =", false).filter("paid =", true).limit(nrOfConfirmationsToSend).list();
+		list.forEach(r -> {
+			sendConfirmationEmail(r);
+			r.setSentConfirmationAboutEvent(true);
+			ofy.save().entities(r).now();
+		});
+		String reservationsAsStr = list.toString();
+		Label label = new Label(reservationsAsStr);
+		label.setWidth(100, Unit.PERCENTAGE);
+		page.addComponent(label);
+	}
+
+	private void migrateReservations()
+	{
+		Objectify ofy = ObjectifyService.ofy();
+		List<Reservation> list = ofy.load().type(Reservation.class).list();
+		ofy.save().entities(list).now();
+	}
+
+	private void sendEventReminders(final VerticalLayout page, int nrOfRemindersToSend)
+	{
+		Objectify ofy = ObjectifyService.ofy();
+		/*
+		 * List<Reservation> list = ofy.load().type(Reservation.class).list();
+		 * list.forEach(r ->
+		 * {
+		 * //Test email
+		 * if(r.getEmail().equals("jontejj@gmail.com"))
+		 * {
+		 * sendReminderEmail(r);
+		 * Label label = new Label(r.toString());
+		 * label.setWidth(100, Unit.PERCENTAGE);
+		 * page.addComponent(label);
+		 * }
+		 * }
+		 */
+		List<Reservation> list = ofy.load().type(Reservation.class).filter("eventId = ", EVENT_ID).filter("cancelled =", false)
+				.filter("sentReminderAboutEvent =", false).limit(nrOfRemindersToSend).list();
+		list.forEach(r -> {
+			sendReminderEmail(r);
+			r.setSentReminderAboutEvent(true);
+			ofy.save().entities(r).now();
+		});
+		String reservationsAsStr = list.toString();
+		Label label = new Label(reservationsAsStr);
+		label.setWidth(100, Unit.PERCENTAGE);
+		page.addComponent(label);
+	}
+
 	private SeatsRemaining loadSeatsRemaining(Objectify ofy)
 	{
 		return ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
+	}
+
+	private static String loadConfig(String key)
+	{
+		return ObjectifyService.ofy().load().key(Key.create(Config.class, key)).now().getValue();
 	}
 
 	private VerticalLayout fullyBooked()
@@ -311,7 +412,6 @@ public class MyUI extends UI
 		WebBrowser webBrowser = UI.getCurrent().getPage().getWebBrowser();
 		reservation.setCreationTime(webBrowser.getCurrentDate());
 		reservation.setEventId(EVENT_ID);
-		BigDecimal priceToPay = priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
 
 		Objectify ofy = ObjectifyService.ofy();
 		SeatsRemaining seatsRemainingCheck = loadSeatsRemaining(ofy);
@@ -319,29 +419,22 @@ public class MyUI extends UI
 			throw new RuntimeException(
 					"Got booked while you were entering your data. Only " + seatsRemainingCheck.getSeatsRemaining() + " seats are now remaining.");
 		seatsRemainingCheck.setSeatsRemaining(seatsRemainingCheck.getSeatsRemaining() - reservation.getNrOfSeats());
-		Map<Key<Object>, Object> savedData = ofy.save().entities(seatsRemainingCheck, reservation).now();
-		Reservation savedReservation = (Reservation) savedData.get(Key.create(reservation));
-		Long reservationId = savedReservation.id;
-		EventReservation eventReservation = CoreFactory.newEventReservationBuilder().addReservationId("" + reservationId)
-				.addReservationStatus(ReservationStatusTypeEnum.RESERVATION_PENDING)
-				.addUnderName(CoreFactory.newPersonBuilder().addName(reservation.getName()).addEmail(reservation.getEmail())
-						.addTelephone(reservation.getPhone()))
-				.addDescription(reservation.getNrOfSeats() + " seats").addReservationFor(event)
-				.addTotalPrice(CoreFactory.newPriceSpecificationBuilder().addPriceCurrency(CURRENCY).addPrice(priceToPay.toString())).build();
-		String asJsonLd = getAsJson(eventReservation);
 
-		HashMap<String, Object> map = new HashMap<>(new Gson().fromJson(asJsonLd, Map.class));
-		map.put("jsonLd", asJsonLd);
-		sendConfirmationEmail(reservation, map);
+		Map<Key<Object>, Object> savedData = ofy.save().entities(seatsRemainingCheck, reservation).now();
+		reservation = (Reservation) savedData.get(Key.create(reservation));
+
+		sendStep1ConfirmationEmail(reservation);
 
 		final VerticalLayout step2 = new VerticalLayout();
+
+		BigDecimal priceToPay = priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
 
 		Label instructions2 = new Label("<b>Step 2/2</b>: Swish " + priceToPay.longValue() + " " + CURRENCY + " to " + PHONENUMBER_TO_PAY_TO
 				+ " to finalize your reservation. <br/><b>Note:</b>Your tickets are reserved for 3 days. Please remember to buy them via swish to finish the booking.",
 				ContentMode.HTML);
 		step2.addComponents(new Label(
 				"Thanks " + reservation.getName() + ", your reservation of " + reservation.getNrOfSeats()
-						+ " seat(s) is noted! Your reservation number is " + reservationId + ".<br/>An email confirmation has been sent to "
+						+ " seat(s) is noted! Your reservation number is " + reservation.id + ".<br/>An email confirmation has been sent to "
 						+ reservation.getEmail() + ". <br/><br/>",
 				ContentMode.HTML), instructions2);
 
@@ -354,64 +447,95 @@ public class MyUI extends UI
 		page.addComponent(step2);
 	}
 
-	private BigDecimal priceToPay(long nrOfSeats, String discount)
+	private static HashMap<String, Object> reservationInformation(Reservation reservation, BigDecimal priceToPay)
+	{
+		ReservationStatusTypeEnum status = ReservationStatusTypeEnum.RESERVATION_PENDING;
+		if(reservation.getPaid())
+		{
+			status = ReservationStatusTypeEnum.RESERVATION_CONFIRMED;
+		}
+		else if(reservation.getCancelled())
+		{
+			status = ReservationStatusTypeEnum.RESERVATION_CANCELLED;
+		}
+		// TODO: set paid for the template somehow. status is a bit odd to use
+		EventReservation eventReservation = CoreFactory.newEventReservationBuilder().addReservationId("" + reservation.id)
+				.addReservationStatus(status)
+				.addUnderName(CoreFactory.newPersonBuilder().addName(reservation.getName()).addEmail(reservation.getEmail())
+						.addTelephone(reservation.getPhone()))
+				.addDescription(reservation.getNrOfSeats() + " seats").addReservationFor(event)
+				.addTotalPrice(CoreFactory.newPriceSpecificationBuilder().addPriceCurrency(CURRENCY).addPrice(priceToPay.toString())).build();
+		String asJsonLd = getAsJson(eventReservation);
+
+		HashMap<String, Object> map = new HashMap<>(new Gson().fromJson(asJsonLd, Map.class));
+		map.put("jsonLd", asJsonLd);
+		return map;
+	}
+
+	private static BigDecimal priceToPay(long nrOfSeats, String discount)
 	{
 		return ticketPrice.multiply(new BigDecimal(nrOfSeats)).multiply(determinePriceModifier(discount)).setScale(0, RoundingMode.HALF_UP);
 	}
 
-	private void sendConfirmationEmail(Reservation reservation, Map<String, Object> registrationJson) throws EmailException
+	private static BigDecimal priceToPay(Reservation reservation)
 	{
-		Properties props = new Properties();
-		Session session = Session.getDefaultInstance(props, null);
+		return ticketPrice.multiply(new BigDecimal(reservation.getNrOfSeats())).multiply(determinePriceModifier(reservation.getDiscount()))
+				.setScale(0, RoundingMode.HALF_UP);
+	}
 
-		try
-		{
-			MimeMessage msg = new MimeMessage(session);
-			msg.setFrom(new InternetAddress("jontejj@gmail.com", "Malmö Improvisatorium Reservations"));
-			msg.addRecipient(Message.RecipientType.TO, new InternetAddress(reservation.getEmail(), reservation.getName()));
-			msg.setSubject(reservation.getName() + " your reservation is partially completed");
-
-			String emailText = generateTemplateWithData("event-reservation-confirmation-email.ftlh", registrationJson);
-			System.out.println(emailText);
-			msg.setText(emailText, Charsets.UTF_8.toString(), "html");
-			Transport.send(msg);
-		}
-		catch(MessagingException | UnsupportedEncodingException ex)
-		{
-			throw new EmailException("Failed to send reservation email to " + reservation.getEmail(), ex);
-		}
+	private void sendStep1ConfirmationEmail(Reservation reservation) throws EmailException
+	{
+		sendEmail(	reservation, reservation.getName() + " your reservation is partially completed", "event-reservation-confirmation-email.ftlh",
+					"reservations");
 	}
 
 	private void sendReminderEmail(Reservation reservation) throws EmailException
 	{
-		Properties props = new Properties();
-		Session session = Session.getDefaultInstance(props, null);
+		sendEmail(reservation, "See you soon @ " + eventName + "!", "reservation-reminder.ftlh", "reminder");
+	}
 
+	private void sendConfirmationEmail(Reservation reservation)
+	{
+		sendEmail(reservation, "Payment confirmed for " + eventName, "reservation-confirmation.ftlh", "reminder");
+	}
+
+	private void sendEmail(Reservation reservation, String subject, String template, String category)
+	{
+		Email from = new Email("jontejj@gmail.com", "Malmö Improvisatorium Reservations");
+		Email to = new Email(reservation.getEmail(), reservation.getName());
+		String emailText = generateTemplateWithData(template, reservation);
+		Content content = new Content("text/html", emailText);
+		Mail mail = new Mail(from, subject, to, content);
+
+		String apiKey = loadConfig("SENDGRID");
+		SendGrid sg = new SendGrid(apiKey);
+		Request request = new Request();
 		try
 		{
-			MimeMessage msg = new MimeMessage(session);
-			msg.setFrom(new InternetAddress("jontejj@gmail.com", "Malmö Improvisatorium Reservations"));
-			msg.addRecipient(Message.RecipientType.TO, new InternetAddress(reservation.getEmail(), reservation.getName()));
-			msg.setSubject("See you soon @ " + eventName + "!");
-
-			String emailText = generateTemplateWithData("reservation-reminder.ftlh", reservation);
-			System.out.println(emailText);
-			msg.setText(emailText, Charsets.UTF_8.toString(), "html");
-			Transport.send(msg);
+			mail.addCategory(category);
+			request.setMethod(Method.POST);
+			request.setEndpoint("mail/send");
+			request.setBody(mail.build());
+			Response response = sg.api(request);
+			System.out.println(response.getStatusCode());
+			System.out.println(response.getBody());
+			System.out.println(response.getHeaders());
 		}
-		catch(MessagingException | UnsupportedEncodingException ex)
+		catch(IOException ex)
 		{
 			throw new EmailException("Failed to send reservation email to " + reservation.getEmail(), ex);
 		}
 	}
 
-	private static String generateTemplateWithData(String templateName, Object rootObject) throws EmailException
+	private static String generateTemplateWithData(String templateName, Reservation reservation) throws EmailException
 	{
+		BigDecimal priceToPay = priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
+		HashMap<String, Object> map = reservationInformation(reservation, priceToPay);
 		try
 		{
 			Template temp = cfg.getTemplate(templateName);
 			StringWriter out = new StringWriter();
-			temp.process(rootObject, out);
+			temp.process(map, out);
 			return out.toString();
 		}
 		catch(IOException | TemplateException ex)
@@ -422,7 +546,7 @@ public class MyUI extends UI
 
 	private static final JsonLdSerializer serializer = new JsonLdSerializer(true /* setPrettyPrinting */);
 
-	public String getAsJson(EventReservation reservation)
+	public static String getAsJson(EventReservation reservation)
 	{
 		try
 		{

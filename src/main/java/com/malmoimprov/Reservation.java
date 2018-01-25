@@ -54,7 +54,11 @@ public class Reservation implements Serializable
 	@Max(5)
 	private Integer nrOfSeats;
 
+	@Index
 	private Boolean paid = false;
+
+	@Index(IfDefault.class)
+	private Boolean sentConfirmationAboutEvent = false;
 
 	@Index
 	private Boolean cancelled = false;
@@ -62,7 +66,10 @@ public class Reservation implements Serializable
 	@Index(IfDefault.class)
 	private Boolean sentReminderAboutEvent = false;
 
-	private long eventId;
+	@Index
+	private Long eventId;
+
+	private Boolean attended = false;
 
 	private Date creationTime;
 
@@ -126,6 +133,16 @@ public class Reservation implements Serializable
 		this.paid = checkNotNull(paid);
 	}
 
+	public Boolean getSentConfirmationAboutEvent()
+	{
+		return sentConfirmationAboutEvent;
+	}
+
+	public void setSentConfirmationAboutEvent(Boolean sentConfirmationAboutEvent)
+	{
+		this.sentConfirmationAboutEvent = sentConfirmationAboutEvent;
+	}
+
 	public Boolean getCancelled()
 	{
 		return cancelled;
@@ -146,12 +163,12 @@ public class Reservation implements Serializable
 		this.sentReminderAboutEvent = sentReminderAboutEvent;
 	}
 
-	public long getEventId()
+	public Long getEventId()
 	{
 		return eventId;
 	}
 
-	public void setEventId(long eventId)
+	public void setEventId(Long eventId)
 	{
 		this.eventId = eventId;
 	}
@@ -161,7 +178,37 @@ public class Reservation implements Serializable
 	{
 		return "Reservation [eventId=" + eventId + ", id=" + id + ", name=" + name + ", phone=" + phone + ", email=" + email + ", discount="
 				+ discount + ", nrOfSeats=" + nrOfSeats + ", paid=" + paid + ", cancelled=" + cancelled + ", sentReminderAboutEvent="
-				+ sentReminderAboutEvent + "]";
+				+ sentReminderAboutEvent + ", sentConfirmationAboutEvent= " + sentConfirmationAboutEvent + ", creationTime=" + creationTime
+				+ ", attended=" + attended + "]";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if(this == obj)
+			return true;
+		if(obj == null)
+			return false;
+		if(getClass() != obj.getClass())
+			return false;
+		Reservation other = (Reservation) obj;
+		if(id == null)
+		{
+			if(other.id != null)
+				return false;
+		}
+		else if(!id.equals(other.id))
+			return false;
+		return true;
 	}
 
 	public Date getCreationTime()
@@ -172,5 +219,15 @@ public class Reservation implements Serializable
 	public void setCreationTime(Date creationTime)
 	{
 		this.creationTime = creationTime;
+	}
+
+	public Boolean getAttended()
+	{
+		return attended;
+	}
+
+	public void setAttended(Boolean attended)
+	{
+		this.attended = attended;
 	}
 }
