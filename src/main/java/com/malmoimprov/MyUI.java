@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebFilter;
@@ -16,6 +15,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
 
 import com.google.appengine.api.users.User;
@@ -34,7 +34,6 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFilter;
 import com.googlecode.objectify.ObjectifyService;
-import com.googlecode.objectify.VoidWork;
 import com.googlecode.objectify.util.Closeable;
 import com.sendgrid.Content;
 import com.sendgrid.Email;
@@ -89,7 +88,6 @@ import freemarker.template.TemplateExceptionHandler;
 @Viewport("initial-scale=1.0, width=device-width")
 public class MyUI extends UI
 {
-
 	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
 	private static final long EVENT_ID = 2;
 	private static final String CURRENCY = "SEK";
@@ -109,6 +107,9 @@ public class MyUI extends UI
 	private static final Configuration cfg;
 	static
 	{
+		SLF4JBridgeHandler.install();
+		// System.out.println(System.getenv());
+
 		cfg = new Configuration(Configuration.VERSION_2_3_25);
 		cfg.setClassForTemplateLoading(MyUI.class, "/email-templates/");
 		cfg.setDefaultEncoding("UTF-8");
@@ -198,6 +199,9 @@ public class MyUI extends UI
 		page.addComponent(new Button("Migrate reservations", (e) -> {
 			migrateReservations();
 		}));
+		// page.addComponent(new Button("Create new event", (e) -> {
+		// page.addComponent(EventCreationPage.form());
+		// }));
 	}
 
 	private void attendanceList(VerticalLayout page)
@@ -544,7 +548,8 @@ public class MyUI extends UI
 		}
 	}
 
-	private static final JsonLdSerializer serializer = new JsonLdSerializer(true /* setPrettyPrinting */);
+	private static final JsonLdSerializer serializer = new JsonLdSerializer(
+			true /* setPrettyPrinting */);
 
 	public static String getAsJson(EventReservation reservation)
 	{
@@ -576,23 +581,23 @@ public class MyUI extends UI
 	@VaadinServletConfiguration(ui = MyUI.class, productionMode = true)
 	public static class MyUIServlet extends GAEVaadinServlet
 	{
-
 		@Override
 		public void init(ServletConfig servletConfig) throws ServletException
 		{
 			super.init(servletConfig);
+			ObjectifyService.init();
+			// ObjectifyService.init(new
+			// ObjectifyFactory(DatastoreOptions.newBuilder().setCredentials(GoogleCredentials.getApplicationDefault()).build().getService()));
+			ObjectifyService.register(Reservation.class);
+			ObjectifyService.register(SeatsRemaining.class);
 			try(Closeable closeable = ObjectifyService.begin())
 			{
-				ObjectifyService.ofy().transactNew(new VoidWork(){
-					@Override
-					public void vrun()
+				ObjectifyService.ofy().transactNew(() -> {
+					Objectify ofy = ObjectifyService.ofy();
+					SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
+					if(now == null)
 					{
-						Objectify ofy = ObjectifyService.ofy();
-						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
-						if(now == null)
-						{
-							ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
-						}
+						ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
 					}
 				});
 			}
@@ -601,6 +606,8 @@ public class MyUI extends UI
 		@Override
 		protected void service(HttpServletRequest unwrappedRequest, HttpServletResponse unwrappedResponse) throws ServletException, IOException
 		{
+			// System.out.println("Env:" + System.getenv());
+			// System.out.println("Properties:" + System.getProperties());
 			super.service(unwrappedRequest, unwrappedResponse);
 		}
 
@@ -615,11 +622,5 @@ public class MyUI extends UI
 	@WebFilter(urlPatterns = "/*", asyncSupported = true)
 	public static class MyObjectifyFilter extends ObjectifyFilter
 	{
-		@Override
-		public void init(FilterConfig filterConfig) throws ServletException
-		{
-			ObjectifyService.register(Reservation.class);
-			ObjectifyService.register(SeatsRemaining.class);
-		}
 	}
 }

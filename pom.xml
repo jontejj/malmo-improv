@@ -14,10 +14,12 @@
 	</prerequisites>
 
 	<properties>
-		<vaadin.version>8.1.4</vaadin.version>
-		<vaadin.plugin.version>8.1.4</vaadin.plugin.version>
-		<jetty.plugin.version>9.3.9.v20160517</jetty.plugin.version>
-		<objectify.version>5.1.21</objectify.version>
+		<vaadin.version>8.3.3</vaadin.version>
+		<vaadin.plugin.version>8.3.3</vaadin.plugin.version>
+		<jetty.plugin.version>9.4.9.v20180320</jetty.plugin.version>
+		<objectify.version>6.0b1</objectify.version>
+		<slf4j.version>1.7.25</slf4j.version>
+		<appengine.maven.plugin.version>1.9.63</appengine.maven.plugin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
@@ -50,6 +52,23 @@
 	</dependencyManagement>
 
 	<dependencies>
+		<!-- Logging -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.2.3</version>
+		</dependency>
+
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
@@ -82,23 +101,28 @@
 		<dependency>
 			<groupId>com.vaadin</groupId>
 			<artifactId>vaadin-compatibility-server-gae</artifactId>
-			<version>8.1.4</version>
+			<version>8.3.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.appengine</groupId>
 			<artifactId>appengine-api-1.0-sdk</artifactId>
-			<version>1.9.59</version>
+			<version>${appengine.maven.plugin.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloud-storage</artifactId>
+			<version>1.24.1</version>
 		</dependency>
 		<!-- END: To use vaadin on GAE -->
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>23.0</version>
+			<version>24.1-jre</version>
 		</dependency>
 		<dependency>
 			<groupId>org.freemarker</groupId>
 			<artifactId>freemarker-gae</artifactId>
-			<version>2.3.26-incubating</version>
+			<version>2.3.27-incubating</version>
 		</dependency>
 		<dependency>
 			<groupId>com.squins.google.fork.schema-org-client</groupId>
@@ -117,16 +141,17 @@
 			<version>2.1.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.google.zxing</groupId>
-			<artifactId>core</artifactId>
-			<version>3.3.1</version>
-		</dependency>
 		<!-- To send emails -->
 		<dependency>
 			<groupId>com.sendgrid</groupId>
 			<artifactId>sendgrid-java</artifactId>
 			<version>4.1.2</version>
+		</dependency>
+		<!-- For QR functionality -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>3.3.1</version>
 		</dependency>
 	</dependencies>
 
@@ -183,13 +208,16 @@
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>${jetty.plugin.version}</version>
 				<configuration>
+					<env>
+						<DATASTORE_EMULATOR_HOST>localhost:8081</DATASTORE_EMULATOR_HOST>
+					</env>
 					<scanIntervalSeconds>2</scanIntervalSeconds>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>com.google.appengine</groupId>
 				<artifactId>appengine-maven-plugin</artifactId>
-				<version>1.9.59</version>
+				<version>${appengine.maven.plugin.version}</version>
 				<configuration>
 					<enableJarClasses>false</enableJarClasses>
 					<port>8080</port>
