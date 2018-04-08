@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebFilter;
@@ -18,9 +19,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
 
-import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
+import com.google.cloud.storage.Acl.User;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -34,6 +35,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFilter;
 import com.googlecode.objectify.ObjectifyService;
+import com.googlecode.objectify.VoidWork;
 import com.googlecode.objectify.util.Closeable;
 import com.sendgrid.Content;
 import com.sendgrid.Email;
@@ -89,17 +91,17 @@ import freemarker.template.TemplateExceptionHandler;
 public class MyUI extends UI
 {
 	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
-	private static final long EVENT_ID = 2;
+	private static final long EVENT_ID = 3;
 	private static final String CURRENCY = "SEK";
-	private static final String PHONENUMBER_TO_PAY_TO = "0705475383";
-	private static final long initialSeatCapacity = 31;
+	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
+	private static final long initialSeatCapacity = 30;
 	private static final BigDecimal ticketPrice = new BigDecimal("50");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/186061025305237";
-	private static final String eventName = "My Unicorn Lover - Improvisation Performance";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/295631817637845/";
+	private static final String eventName = "The Embarrassed Sofa - Improvisation Performance";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2017-12-09T19:30:00+02:00").addDuration("PT1H30M")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2018-04-27T19:00:00+02:00").addDuration("PT1H30M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
@@ -125,9 +127,11 @@ public class MyUI extends UI
 
 		final VerticalLayout page = new VerticalLayout();
 
-		Image banner = new Image("", new ClassResource("/my-unicorn-lover-poster.jpg"));
-		banner.addStyleName("jonatan");
-		banner.setWidth(400, Unit.PIXELS);
+		Image banner = new Image("", new ClassResource("/embarrased-sofa.jpg"));
+		// banner.setSizeFull();
+		banner.setWidth(50, Unit.PERCENTAGE);
+		// banner.addStyleName("jonatan");
+		// banner.setWidth(800, Unit.PIXELS);
 		page.addComponent(banner);
 
 		SeatsRemaining seatsRemaining = loadSeatsRemaining(ObjectifyService.ofy());
@@ -581,23 +585,31 @@ public class MyUI extends UI
 	@VaadinServletConfiguration(ui = MyUI.class, productionMode = true)
 	public static class MyUIServlet extends GAEVaadinServlet
 	{
+		private static final long serialVersionUID = 1L;
+
 		@Override
 		public void init(ServletConfig servletConfig) throws ServletException
 		{
 			super.init(servletConfig);
-			ObjectifyService.init();
+			// ObjectifyService.init();
 			// ObjectifyService.init(new
 			// ObjectifyFactory(DatastoreOptions.newBuilder().setCredentials(GoogleCredentials.getApplicationDefault()).build().getService()));
 			ObjectifyService.register(Reservation.class);
 			ObjectifyService.register(SeatsRemaining.class);
+			ObjectifyService.register(Config.class);
 			try(Closeable closeable = ObjectifyService.begin())
 			{
-				ObjectifyService.ofy().transactNew(() -> {
-					Objectify ofy = ObjectifyService.ofy();
-					SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
-					if(now == null)
+				ObjectifyService.ofy().transactNew(new VoidWork(){
+					@Override
+					public void vrun()
 					{
-						ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
+						System.out.println("Configuring seats");
+						Objectify ofy = ObjectifyService.ofy();
+						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
+						if(now == null)
+						{
+							ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
+						}
 					}
 				});
 			}
@@ -622,5 +634,13 @@ public class MyUI extends UI
 	@WebFilter(urlPatterns = "/*", asyncSupported = true)
 	public static class MyObjectifyFilter extends ObjectifyFilter
 	{
+		@Override
+		public void init(FilterConfig filterConfig) throws ServletException
+		{
+			// ObjectifyService.init();
+			ObjectifyService.register(Reservation.class);
+			ObjectifyService.register(SeatsRemaining.class);
+			ObjectifyService.register(Config.class);
+		}
 	}
 }
