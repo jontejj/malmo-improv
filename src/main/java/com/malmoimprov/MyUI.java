@@ -54,9 +54,9 @@ import com.vaadin.data.converter.StringToIntegerConverter;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.ClassResource;
 import com.vaadin.server.ExternalResource;
-import com.vaadin.server.GAEVaadinServlet;
 import com.vaadin.server.Responsive;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServlet;
 import com.vaadin.server.WebBrowser;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.Button;
@@ -583,7 +583,7 @@ public class MyUI extends UI
 	@SuppressWarnings("deprecation")
 	@WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
 	@VaadinServletConfiguration(ui = MyUI.class, productionMode = true)
-	public static class MyUIServlet extends GAEVaadinServlet
+	public static class MyUIServlet extends VaadinServlet
 	{
 		private static final long serialVersionUID = 1L;
 

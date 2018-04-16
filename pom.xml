@@ -19,9 +19,9 @@
 		<vaadin.plugin.version>8.1.4</vaadin.plugin.version>
 		<jetty.plugin.version>9.4.9.v20180320</jetty.plugin.version>
 		<!-- TODO(joj): use 6.0b1 for google storage -->
-		<objectify.version>5.1.21</objectify.version>
+		<objectify.version>6.0b1</objectify.version>
 		<slf4j.version>1.7.25</slf4j.version>
-		<appengine.maven.plugin.version>1.9.63</appengine.maven.plugin.version>
+		<!-- <appengine.maven.plugin.version>1.9.63</appengine.maven.plugin.version> -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
@@ -100,16 +100,10 @@
 			<version>4.3.1.Final</version>
 		</dependency>
 		<!-- BEGIN: To use vaadin on GAE -->
-		<dependency>
-			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-compatibility-server-gae</artifactId>
-			<version>${vaadin.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.appengine</groupId>
-			<artifactId>appengine-api-1.0-sdk</artifactId>
-			<version>${appengine.maven.plugin.version}</version>
-		</dependency>
+		<!-- <dependency> <groupId>com.vaadin</groupId> <artifactId>vaadin-compatibility-server-gae</artifactId> 
+			<version>${vaadin.version}</version> </dependency> <dependency> <groupId>com.google.appengine</groupId> 
+			<artifactId>appengine-api-1.0-sdk</artifactId> <version>${appengine.maven.plugin.version}</version> 
+			</dependency> -->
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>google-cloud-storage</artifactId>
@@ -221,16 +215,9 @@
 					<scanIntervalSeconds>2</scanIntervalSeconds>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>com.google.appengine</groupId>
-				<artifactId>appengine-maven-plugin</artifactId>
-				<version>${appengine.maven.plugin.version}</version>
-				<configuration>
-					<enableJarClasses>false</enableJarClasses>
-					<port>8080</port>
-					<address>0.0.0.0</address>
-				</configuration>
-			</plugin>
+			<!-- <plugin> <groupId>com.google.appengine</groupId> <artifactId>appengine-maven-plugin</artifactId> 
+				<version>${appengine.maven.plugin.version}</version> <configuration> <enableJarClasses>false</enableJarClasses> 
+				<port>8080</port> <address>0.0.0.0</address> </configuration> </plugin> -->
 		</plugins>
 	</build>
 
