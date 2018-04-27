@@ -19,8 +19,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
 
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
 import com.google.cloud.storage.Acl.User;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -138,7 +136,7 @@ public class MyUI extends UI
 
 		if(vaadinRequest.getParameter("admin") != null)
 		{
-			UserService userService = UserServiceFactory.getUserService();
+			/* UserService userService = UserServiceFactory.getUserService();
 			if(userService.isUserLoggedIn())
 			{
 				User currentUser = userService.getCurrentUser();
@@ -157,7 +155,7 @@ public class MyUI extends UI
 			else
 			{
 				page.addComponent(new Link("Login", new ExternalResource(userService.createLoginURL("/?admin"))));
-			}
+			} */
 		}
 		else if(seatsRemaining.getSeatsRemaining() > 0)
 		{

@@ -50,7 +50,7 @@ gcloud container images delete gcr.io/malmo-improv/quickstart-image:tag1 #remove
 #Local Kubernetes
 https://www.virtualbox.org/wiki/Downloads
 https://github.com/kubernetes/minikube/releases
-minicube start
+minikube start
 kubectl create -f basic-pod.yaml
 kubectl port-forward nginx 60700:80
 
