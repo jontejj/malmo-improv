@@ -589,7 +589,7 @@ public class MyUI extends UI
 		public void init(ServletConfig servletConfig) throws ServletException
 		{
 			super.init(servletConfig);
-			// ObjectifyService.init();
+			ObjectifyService.init();
 			// ObjectifyService.init(new
 			// ObjectifyFactory(DatastoreOptions.newBuilder().setCredentials(GoogleCredentials.getApplicationDefault()).build().getService()));
 			ObjectifyService.register(Reservation.class);
@@ -635,7 +635,7 @@ public class MyUI extends UI
 		@Override
 		public void init(FilterConfig filterConfig) throws ServletException
 		{
-			// ObjectifyService.init();
+			ObjectifyService.init();
 			ObjectifyService.register(Reservation.class);
 			ObjectifyService.register(SeatsRemaining.class);
 			ObjectifyService.register(Config.class);
