@@ -216,8 +216,9 @@
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>${jetty.plugin.version}</version>
 				<configuration>
-					<!-- <env> <DATASTORE_EMULATOR_HOST>localhost:8081</DATASTORE_EMULATOR_HOST> 
-						</env> -->
+					<env>
+						<DATASTORE_EMULATOR_HOST>localhost:8081</DATASTORE_EMULATOR_HOST>
+					</env>
 					<scanIntervalSeconds>2</scanIntervalSeconds>
 				</configuration>
 			</plugin>

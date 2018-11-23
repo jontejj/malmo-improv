@@ -9,6 +9,24 @@ Workflow
 
 To compile the entire project, run "mvn install".
 
+To simply run everything:
+gcloud beta emulators datastore start
+cd src/main/docker/graylog
+docker-compose up
+
+#Install Jetty
+curl http://central.maven.org/maven2/org/eclipse/jetty/jetty-distribution/9.4.9.v20180320/jetty-distribution-9.4.9.v20180320.zip --output jetty.zip
+unzip jetty.zip
+rm jetty.zip
+export JETTY_HOME=$(pwd)/jetty/jetty-distribution-9.4.9.v20180320/
+
+#Create jetty-base directory for fast startups
+java -jar $JETTY_HOME/start.jar --create-startd
+java -jar $JETTY_HOME/start.jar --add-to-start=http,deploy
+
+jetty.http.port=9081
+jetty-distribution-9.4.9.v20180320
+
 To run the application, run "mvn jetty:run" and open http://localhost:8080/ .
 
 To produce a deployable production mode WAR:

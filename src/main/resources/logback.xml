@@ -1,18 +1,60 @@
-<configuration>
-	<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
-	<resetJUL>true</resetJUL>
-	</contextListener>	
-	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+<configuration debug="true">
+	<contextListener
+		class="ch.qos.logback.classic.jul.LevelChangePropagator">
+		<resetJUL>true</resetJUL>
+	</contextListener>
+	<appender name="STDOUT"
+		class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg
 			</pattern>
 		</encoder>
 	</appender>
 
-	<logger name="com.malmoimprov" level="WARN" />
-	<!-- <logger name="com.google.appengine.tools.development.DevAppServerModulesFilter" level="INFO" /> -->
+	<appender name="GELF"
+		class="de.siegmar.logbackgelf.GelfTcpAppender">
+		<graylogHost>localhost</graylogHost>
+		<graylogPort>12201</graylogPort>
+		<connectTimeout>15000</connectTimeout>
+		<reconnectInterval>300</reconnectInterval>
+		<maxRetries>2</maxRetries>
+		<retryDelay>3000</retryDelay>
+		<poolSize>2</poolSize>
+		<poolMaxWaitTime>5000</poolMaxWaitTime>
+		<layout class="de.siegmar.logbackgelf.GelfLayout">
+			<originHost>localhost</originHost>
+			<includeRawMessage>false</includeRawMessage>
+			<includeMarker>true</includeMarker>
+			<includeMdcData>true</includeMdcData>
+			<includeCallerData>false</includeCallerData>
+			<includeRootCauseData>false</includeRootCauseData>
+			<includeLevelName>false</includeLevelName>
+			<shortPatternLayout
+				class="ch.qos.logback.classic.PatternLayout">
+				<pattern>%m%nopex</pattern>
+			</shortPatternLayout>
+			<fullPatternLayout
+				class="ch.qos.logback.classic.PatternLayout">
+				<pattern>%m</pattern>
+			</fullPatternLayout>
+			<staticField>app_name:reservations</staticField>
+			<staticField>os_arch:${os.arch}</staticField>
+			<staticField>os_name:${os.name}</staticField>
+			<staticField>os_version:${os.version}</staticField>
+		</layout>
+	</appender>
+
+	<appender name="ASYNC GELF"
+		class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="GELF" />
+	</appender>
+
+	<logger name="com.malmoimprov" level="INFO" />
+	<!-- <logger name="com.google.appengine.tools.development.DevAppServerModulesFilter" 
+		level="INFO" /> -->
 	<!--<logger name="org.atmosphere.util.IOUtils" level="INFO" /> -->
-	<root level="WARN">
+	<root level="INFO">
 		<appender-ref ref="STDOUT" />
+		<appender-ref ref="ASYNC GELF" />
 	</root>
 </configuration>

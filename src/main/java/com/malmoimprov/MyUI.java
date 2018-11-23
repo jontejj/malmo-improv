@@ -19,9 +19,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
 
+import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
-import com.google.cloud.storage.Acl.User;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -95,13 +95,13 @@ public class MyUI extends UI
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 30;
-	private static final BigDecimal ticketPrice = new BigDecimal("50");
+	private static final BigDecimal ticketPrice = new BigDecimal("40");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/295631817637845/";
-	private static final String eventName = "The Embarrassed Sofa - Improvisation Performance";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/318982348916779/";
+	private static final String eventName = "Squeezing Gently - Improv Performance";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2018-04-27T19:00:00+02:00").addDuration("PT1H30M")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2018-11-10T18:30:00+01:00").addDuration("PT1H30M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
@@ -127,7 +127,7 @@ public class MyUI extends UI
 
 		final VerticalLayout page = new VerticalLayout();
 
-		Image banner = new Image("", new ClassResource("/embarrased-sofa.jpg"));
+		Image banner = new Image("", new ClassResource("/Squeezing_Gently.png"));
 		// banner.setSizeFull();
 		banner.setWidth(50, Unit.PERCENTAGE);
 		// banner.addStyleName("jonatan");
@@ -552,8 +552,7 @@ public class MyUI extends UI
 		}
 	}
 
-	private static final JsonLdSerializer serializer = new JsonLdSerializer(
-			true /* setPrettyPrinting */);
+	private static final JsonLdSerializer serializer = new JsonLdSerializer(true /* setPrettyPrinting */);
 
 	public static String getAsJson(EventReservation reservation)
 	{
