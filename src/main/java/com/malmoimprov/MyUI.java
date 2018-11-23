@@ -1,27 +1,8 @@
 package com.malmoimprov;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.slf4j.bridge.SLF4JBridgeHandler;
-import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
-
+import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
-import com.google.cloud.storage.Acl.User;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -74,6 +55,25 @@ import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.renderers.ButtonRenderer;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
+
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -91,18 +91,18 @@ import freemarker.template.TemplateExceptionHandler;
 public class MyUI extends UI
 {
 	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
-	private static final long EVENT_ID = 3;
+	private static final long EVENT_ID = 6;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
-	private static final long initialSeatCapacity = 30;
+	private static final long initialSeatCapacity = 90;
 	private static final BigDecimal ticketPrice = new BigDecimal("50");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/295631817637845/";
-	private static final String eventName = "The Embarrassed Sofa - Improvisation Performance";
+    private static final String facebookEventUrl = "https://www.facebook.com/events/600638493700426/";
+	private static final String eventName = "The Palace Of Love - Improvisation Performance";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2018-04-27T19:00:00+02:00").addDuration("PT1H30M")
-			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2018-12-08T18:30:00+01:00").addDuration("PT1H30M")
+			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 1")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
 			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();
@@ -127,7 +127,7 @@ public class MyUI extends UI
 
 		final VerticalLayout page = new VerticalLayout();
 
-		Image banner = new Image("", new ClassResource("/embarrased-sofa.jpg"));
+		Image banner = new Image("", new ClassResource("/palace-of-love.png"));
 		// banner.setSizeFull();
 		banner.setWidth(50, Unit.PERCENTAGE);
 		// banner.addStyleName("jonatan");
@@ -552,8 +552,7 @@ public class MyUI extends UI
 		}
 	}
 
-	private static final JsonLdSerializer serializer = new JsonLdSerializer(
-			true /* setPrettyPrinting */);
+	private static final JsonLdSerializer serializer = new JsonLdSerializer(true /* setPrettyPrinting */);
 
 	public static String getAsJson(EventReservation reservation)
 	{
@@ -591,28 +590,13 @@ public class MyUI extends UI
 		public void init(ServletConfig servletConfig) throws ServletException
 		{
 			super.init(servletConfig);
-			ObjectifyService.init();
+			// ObjectifyService.init();
 			// ObjectifyService.init(new
 			// ObjectifyFactory(DatastoreOptions.newBuilder().setCredentials(GoogleCredentials.getApplicationDefault()).build().getService()));
-			ObjectifyService.register(Reservation.class);
-			ObjectifyService.register(SeatsRemaining.class);
-			ObjectifyService.register(Config.class);
-			try(Closeable closeable = ObjectifyService.begin())
-			{
-				ObjectifyService.ofy().transactNew(new VoidWork(){
-					@Override
-					public void vrun()
-					{
-						System.out.println("Configuring seats");
-						Objectify ofy = ObjectifyService.ofy();
-						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
-						if(now == null)
-						{
-							ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
-						}
-					}
-				});
-			}
+			// ObjectifyService.register(Reservation.class);
+			// ObjectifyService.register(SeatsRemaining.class);
+			// ObjectifyService.register(Config.class);
+
 		}
 
 		@Override
@@ -637,10 +621,25 @@ public class MyUI extends UI
 		@Override
 		public void init(FilterConfig filterConfig) throws ServletException
 		{
-			ObjectifyService.init();
 			ObjectifyService.register(Reservation.class);
 			ObjectifyService.register(SeatsRemaining.class);
 			ObjectifyService.register(Config.class);
+			try(Closeable closeable = ObjectifyService.begin())
+			{
+				ObjectifyService.ofy().transactNew(new VoidWork(){
+					@Override
+					public void vrun()
+					{
+						System.out.println("Configuring seats");
+						Objectify ofy = ObjectifyService.ofy();
+						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
+						if(now == null)
+						{
+							ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
+						}
+					}
+				});
+			}
 		}
 	}
 }

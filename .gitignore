@@ -31,3 +31,4 @@ target/**
 
 #Mac thumbs
 .DS_Store
+/target/
