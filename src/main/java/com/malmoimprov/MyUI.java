@@ -91,17 +91,17 @@ import freemarker.template.TemplateExceptionHandler;
 public class MyUI extends UI
 {
 	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
-	private static final long EVENT_ID = 7;
+	private static final long EVENT_ID = 8;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 29;
 	private static final BigDecimal ticketPrice = new BigDecimal("50");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/300478497273241/";
-	private static final String eventName = "Improve For Love - Improvisation Performance";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/553424245178381/";
+	private static final String eventName = "Happy Endings - Improvisation Performance";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-02-01T18:30:00+01:00").addDuration("PT1H30M")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-03-02T18:00:00+01:00").addDuration("PT1H30M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
@@ -127,7 +127,7 @@ public class MyUI extends UI
 
 		final VerticalLayout page = new VerticalLayout();
 
-		Image banner = new Image("", new ClassResource("/IForLove.jpg"));
+		Image banner = new Image("", new ClassResource("/happy_endings.jpg"));
 		// banner.setSizeFull();
 		banner.setWidth(50, Unit.PERCENTAGE);
 		// banner.addStyleName("jonatan");
