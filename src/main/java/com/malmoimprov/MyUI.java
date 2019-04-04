@@ -91,18 +91,18 @@ import freemarker.template.TemplateExceptionHandler;
 public class MyUI extends UI
 {
 	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
-	private static final long EVENT_ID = 9;
+	private static final long EVENT_ID = 10;
 	private static final String CURRENCY = "SEK";
-	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
-	private static final long initialSeatCapacity = 29;
+	private static final String PHONENUMBER_TO_PAY_TO = "0739694606";
+	private static final long initialSeatCapacity = 60;
 	private static final BigDecimal ticketPrice = new BigDecimal("50");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/2310202205915352/";
-	private static final String eventName = "Absinthe Sauna - Improvisation Performance";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/349059579049032/";
+	private static final String eventName = "Nothing Really Matress - a humble improv extravaganza";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-03-30T15:00:00+01:00").addDuration("PT1H30M")
-			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-04-27T18:00:00+02:00").addDuration("PT1H30M")
+			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 1")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
 			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();
@@ -127,9 +127,9 @@ public class MyUI extends UI
 
 		final VerticalLayout page = new VerticalLayout();
 
-		Image banner = new Image("", new ClassResource("/absinthe_sauna.jpg"));
+		Image banner = new Image("", new ClassResource("/nothing_really_mattress.jpg"));
 		// banner.setSizeFull();
-		banner.setWidth(50, Unit.PERCENTAGE);
+		banner.setWidth(30, Unit.PERCENTAGE);
 		// banner.addStyleName("jonatan");
 		// banner.setWidth(800, Unit.PIXELS);
 		page.addComponent(banner);
