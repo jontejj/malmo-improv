@@ -1,24 +1,5 @@
 package com.malmoimprov;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.slf4j.bridge.SLF4JBridgeHandler;
-import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
-
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
@@ -52,7 +33,6 @@ import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationException;
 import com.vaadin.data.converter.StringToIntegerConverter;
 import com.vaadin.icons.VaadinIcons;
-import com.vaadin.server.ClassResource;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.server.GAEVaadinServlet;
 import com.vaadin.server.Responsive;
@@ -73,6 +53,25 @@ import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.renderers.ButtonRenderer;
+
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
+
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -127,7 +126,7 @@ public class MyUI extends UI
 
 		final VerticalLayout page = new VerticalLayout();
 
-		Image banner = new Image("", new ClassResource("/nothing_really_mattress.jpg"));
+        Image banner = new Image("", new ExternalResource("https://storage.googleapis.com/malmo-improv.appspot.com/events/nothing_really_mattress.jpg"));
 		// banner.setSizeFull();
 		banner.setWidth(30, Unit.PERCENTAGE);
 		// banner.addStyleName("jonatan");
@@ -142,7 +141,7 @@ public class MyUI extends UI
 			if(userService.isUserLoggedIn())
 			{
 				User currentUser = userService.getCurrentUser();
-				ImmutableSet<String> admins = ImmutableSet.of("JonteJJ@gmail.com", "sara.zeidi58@gmail.com");
+                ImmutableSet<String> admins = ImmutableSet.of("JonteJJ@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com");
 				boolean isAdmin = admins.contains(currentUser.getEmail());
 				if(isAdmin)
 				{
@@ -152,7 +151,7 @@ public class MyUI extends UI
 				{
 					page.addComponent(new Label("Your user is not authorized to manage reservations"));
 				}
-				page.addComponent(new Link("Logout", new ExternalResource(userService.createLogoutURL("/"))));
+                page.addComponent(new Link("Logout", new ExternalResource(userService.createLogoutURL("//"))));
 			}
 			else
 			{
