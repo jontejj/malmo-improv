@@ -141,8 +141,8 @@ public class MyUI extends UI
 			if(userService.isUserLoggedIn())
 			{
 				User currentUser = userService.getCurrentUser();
-                ImmutableSet<String> admins = ImmutableSet.of("JonteJJ@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com");
-				boolean isAdmin = admins.contains(currentUser.getEmail());
+                ImmutableSet<String> admins = ImmutableSet.of("jontejj@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com");
+                boolean isAdmin = admins.contains(currentUser.getEmail().toLowerCase());
 				if(isAdmin)
 				{
 					loggedInPage(page);
