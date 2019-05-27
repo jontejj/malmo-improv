@@ -1,5 +1,24 @@
 package com.malmoimprov;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
+
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
@@ -54,25 +73,6 @@ import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.renderers.ButtonRenderer;
 
-import org.slf4j.bridge.SLF4JBridgeHandler;
-import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
-
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -90,18 +90,19 @@ import freemarker.template.TemplateExceptionHandler;
 public class MyUI extends UI
 {
 	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
-	private static final long EVENT_ID = 10;
+	private static final long EVENT_ID = 11;
 	private static final String CURRENCY = "SEK";
-	private static final String PHONENUMBER_TO_PAY_TO = "0739694606";
+	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 60;
 	private static final BigDecimal ticketPrice = new BigDecimal("50");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
+	private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/349059579049032/";
-	private static final String eventName = "Nothing Really Matress - a humble improv extravaganza";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/570555690135248/";
+	private static final String eventName = "PreTenTiouS - The Improvv Showw";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-04-27T18:00:00+02:00").addDuration("PT1H30M")
-			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 1")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-06-07T19:00:00+02:00").addDuration("PT1H30M")
+			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
 			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();
@@ -126,7 +127,7 @@ public class MyUI extends UI
 
 		final VerticalLayout page = new VerticalLayout();
 
-        Image banner = new Image("", new ExternalResource("https://storage.googleapis.com/malmo-improv.appspot.com/events/nothing_really_mattress.jpg"));
+		Image banner = new Image("", new ExternalResource("https://storage.googleapis.com/malmo-improv.appspot.com/events/pretentious.jpg"));
 		// banner.setSizeFull();
 		banner.setWidth(30, Unit.PERCENTAGE);
 		// banner.addStyleName("jonatan");
@@ -141,8 +142,8 @@ public class MyUI extends UI
 			if(userService.isUserLoggedIn())
 			{
 				User currentUser = userService.getCurrentUser();
-                ImmutableSet<String> admins = ImmutableSet.of("jontejj@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com");
-                boolean isAdmin = admins.contains(currentUser.getEmail().toLowerCase());
+				ImmutableSet<String> admins = ImmutableSet.of("jontejj@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com");
+				boolean isAdmin = admins.contains(currentUser.getEmail().toLowerCase());
 				if(isAdmin)
 				{
 					loggedInPage(page);
@@ -151,7 +152,7 @@ public class MyUI extends UI
 				{
 					page.addComponent(new Label("Your user is not authorized to manage reservations"));
 				}
-                page.addComponent(new Link("Logout", new ExternalResource(userService.createLogoutURL("//"))));
+				page.addComponent(new Link("Logout", new ExternalResource(userService.createLogoutURL("//"))));
 			}
 			else
 			{
@@ -199,9 +200,9 @@ public class MyUI extends UI
 		page.addComponent(new Button("Take attendance", (e) -> {
 			attendanceList(page);
 		}));
-		page.addComponent(new Button("Migrate reservations", (e) -> {
-			migrateReservations();
-		}));
+		// page.addComponent(new Button("Migrate reservations", (e) -> {
+		// migrateReservations();
+		// }));
 		// page.addComponent(new Button("Create new event", (e) -> {
 		// page.addComponent(EventCreationPage.form());
 		// }));
@@ -361,7 +362,7 @@ public class MyUI extends UI
 		binder.forField(nrOfSeats).withConverter(new StringToIntegerConverter("Invalid nr of seats")).bind("nrOfSeats");
 
 		RadioButtonGroup<String> discounts = new RadioButtonGroup<>("Discounts");
-		discounts.setItems("Normal", "MAF-member", "Student");
+		discounts.setItems("Normal", "MAF-member", "Student", "Folk Universitetet");
 
 		discounts.setSelectedItem(defaultDiscountType);
 		binder.forField(discounts).bind("discount");
@@ -574,6 +575,8 @@ public class MyUI extends UI
 	{
 		switch(discount)
 		{
+		case "Folk Universitetet":
+			return folkUniPricePercentage;
 		case "MAF-member":
 		case "Student":
 			return memberPricePercentage;
