@@ -90,7 +90,7 @@ import freemarker.template.TemplateExceptionHandler;
 public class MyUI extends UI
 {
 	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
-	private static final long EVENT_ID = 13;
+	private static final long EVENT_ID = 14;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 60;
@@ -98,9 +98,9 @@ public class MyUI extends UI
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/415528052680372/";
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/improv_for_dinner.png	";
-	private static final String eventName = "Improv for Dinner - Improv Show";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/2565185613727665/";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/gazpacho.jpg";
+	private static final String eventName = "Gazpacho! - Improv Show";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
 			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-10-11T19:00:00+02:00").addDuration("PT1H00M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 1")
