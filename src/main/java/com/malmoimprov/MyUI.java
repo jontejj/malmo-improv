@@ -102,7 +102,7 @@ public class MyUI extends UI
 	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/awkward_holidays.jpg";
 	private static final String eventName = "Awkward Holidays - Improv Show";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-10-11T19:00:00+01:00").addDuration("PT1H00M")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2019-12-06T19:00:00+01:00").addDuration("PT1H00M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 3")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Spångatan 20").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
