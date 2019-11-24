@@ -16,7 +16,8 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.vaadin.crudui.crud.impl.GridBasedCrudComponent;
 
 import com.google.appengine.api.users.User;
@@ -89,7 +90,11 @@ import freemarker.template.TemplateExceptionHandler;
 @Viewport("initial-scale=1.0, width=device-width")
 public class MyUI extends UI
 {
-	// private static final Logger log = Logger.getLogger(MyUI.class.getName());
+	private static final long serialVersionUID = 1L;
+
+	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
+
+	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
 	private static final long EVENT_ID = 15;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
@@ -110,8 +115,7 @@ public class MyUI extends UI
 	private static final Configuration cfg;
 	static
 	{
-		SLF4JBridgeHandler.install();
-		// System.out.println(System.getenv());
+		// SLF4JBridgeHandler.install();
 
 		cfg = new Configuration(Configuration.VERSION_2_3_25);
 		cfg.setClassForTemplateLoading(MyUI.class, "/email-templates/");
@@ -315,7 +319,10 @@ public class MyUI extends UI
 
 	private static String loadConfig(String key)
 	{
-		return ObjectifyService.ofy().load().key(Key.create(Config.class, key)).now().getValue();
+		Config configEntry = ObjectifyService.ofy().load().key(Key.create(Config.class, key)).now();
+		if(configEntry == null)
+			throw new IllegalStateException("No config for key: " + key);
+		return configEntry.getValue();
 	}
 
 	private VerticalLayout fullyBooked()
@@ -462,7 +469,7 @@ public class MyUI extends UI
 		page.addComponent(step2);
 	}
 
-	private static HashMap<String, Object> reservationInformation(Reservation reservation, BigDecimal priceToPay)
+	static Map<String, Object> reservationInformation(Reservation reservation, BigDecimal priceToPay)
 	{
 		ReservationStatusTypeEnum status = ReservationStatusTypeEnum.RESERVATION_PENDING;
 		if(reservation.getPaid())
@@ -522,7 +529,7 @@ public class MyUI extends UI
 		Content content = new Content("text/html", emailText);
 		Mail mail = new Mail(from, subject, to, content);
 
-		String apiKey = loadConfig("SENDGRID");
+		String apiKey = loadConfig(CONFIG_KEY_SENDGRID);
 		SendGrid sg = new SendGrid(apiKey);
 		Request request = new Request();
 		try
@@ -532,9 +539,9 @@ public class MyUI extends UI
 			request.setEndpoint("mail/send");
 			request.setBody(mail.build());
 			Response response = sg.api(request);
-			System.out.println(response.getStatusCode());
-			System.out.println(response.getBody());
-			System.out.println(response.getHeaders());
+			LOG.info("Returned status code: {}", response.getStatusCode());
+			LOG.info("Body: {}", response.getBody());
+			LOG.info("Headers: {}", response.getHeaders());
 		}
 		catch(IOException ex)
 		{
@@ -545,7 +552,7 @@ public class MyUI extends UI
 	private static String generateTemplateWithData(String templateName, Reservation reservation) throws EmailException
 	{
 		BigDecimal priceToPay = priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
-		HashMap<String, Object> map = reservationInformation(reservation, priceToPay);
+		Map<String, Object> map = reservationInformation(reservation, priceToPay);
 		try
 		{
 			Template temp = cfg.getTemplate(templateName);
@@ -639,12 +646,24 @@ public class MyUI extends UI
 					@Override
 					public void vrun()
 					{
-						System.out.println("Configuring seats");
+						LOG.info("Configuring seats");
 						Objectify ofy = ObjectifyService.ofy();
 						SeatsRemaining now = ofy.load().key(Key.create(SeatsRemaining.class, "" + EVENT_ID)).now();
 						if(now == null)
 						{
 							ofy.save().entities(new SeatsRemaining().setEventId("" + EVENT_ID).setSeatsRemaining(initialSeatCapacity)).now();
+						}
+						String sendgridKey = System.getProperty("config." + CONFIG_KEY_SENDGRID);
+						if(sendgridKey != null)
+						{
+							Config alreadyExists = ofy.load().key(Key.create(Config.class, CONFIG_KEY_SENDGRID)).now();
+							if(alreadyExists == null)
+							{
+								Config config = new Config();
+								config.setKey(CONFIG_KEY_SENDGRID);
+								config.setValue(sendgridKey);
+								ofy.save().entities(config).now();
+							}
 						}
 					}
 				});
