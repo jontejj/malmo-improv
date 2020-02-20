@@ -95,7 +95,7 @@ public class MyUI extends UI
 	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
 
 	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
-	private static final long EVENT_ID = 16;
+	private static final long EVENT_ID = 17;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 29;
@@ -103,13 +103,13 @@ public class MyUI extends UI
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/633917914045683/";
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/vision-of-2020.jpg";
-	private static final String eventName = "Vision of 2020s - Improv Comedy Show";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/669381787150503/";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/Leap-in-the-Dark.jpg";
+	private static final String eventName = "Leap in the Dark: Improv Comedy Show";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2020-01-30T19:00:00+01:00").addDuration("PT1H00M")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2020-02-29T18:00:00+01:00").addDuration("PT1H30M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 2")
-					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Spångatan 20").addAddressLocality("Malmö")
+					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("Norra Skolgatan 12").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21152").addAddressCountry("SE")))
 			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();
 	private static final Configuration cfg;
