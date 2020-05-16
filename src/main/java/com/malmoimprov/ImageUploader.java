@@ -14,6 +14,10 @@ package com.malmoimprov;
 
 import java.io.OutputStream;
 import java.nio.channels.Channels;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.Acl;
@@ -60,5 +64,11 @@ class ImageUploader implements Receiver, SucceededListener
 		storage.createAcl(blobId, Acl.of(User.ofAllUsers(), Role.READER));
 		Blob blob = storage.get(blobId, BlobGetOption.fields(BlobField.MEDIA_LINK));
 		image.setSource(new ExternalResource(blob.getMediaLink()));
+	}
+
+	public static void main(String[] args)
+	{
+		System.out.println(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH).withZone(ZoneId.of("GMT"))
+				.format(LocalDateTime.now()));
 	}
 }
