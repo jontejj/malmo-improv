@@ -95,7 +95,7 @@ public class MyUI extends UI
 	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
 
 	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
-	private static final long EVENT_ID = 19;
+	private static final long EVENT_ID = 20;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 30;
@@ -103,11 +103,11 @@ public class MyUI extends UI
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/2188626461283571";
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/Heat_Wave_Occultists.jpg";
-	private static final String eventName = "Heat Wave Occultists - Improv Show (covid-safe)";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/679226156279663/";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/improv_cure_show.jpg";
+	private static final String eventName = "The Improv Cure Show (covid-responsible)";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2020-08-14T18:30:00+02:00").addDuration("PT2H00M")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2020-09-12T18:00:00+02:00").addDuration("PT1H30M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 1")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("N. Skolgatan 10A").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21153").addAddressCountry("SE")))
