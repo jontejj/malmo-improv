@@ -95,7 +95,7 @@ public class MyUI extends UI
 	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
 
 	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
-	private static final long EVENT_ID = 21;
+	private static final long EVENT_ID = 22;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 30;
@@ -104,10 +104,10 @@ public class MyUI extends UI
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
 	private static final String facebookEventUrl = "https://www.facebook.com/events/1237697989896670/";
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/FireAndSmoke.jpg";
-	private static final String eventName = "Fire & Smoke";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/NotAgain.jpg";
+	private static final String eventName = "Not Again! - Improv Show (covid-responsible)";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder().addUrl(facebookEventUrl).addName(eventName)
-			.addOrganizer("Malmö Improvisatorium").addStartDate("2020-10-16T18:30:00+02:00").addDuration("PT1H30M")
+			.addOrganizer("Malmö Improvisatorium").addStartDate("2020-11-07T18:00:00+01:00").addDuration("PT1H30M")
 			.addLocation(CoreFactory.newPlaceBuilder().addName("MAF, scen 1")
 					.addAddress(CoreFactory.newPostalAddressBuilder().addStreetAddress("N. Skolgatan 10A").addAddressLocality("Malmö")
 							.addAddressRegion("SE-M").addPostalCode("21153").addAddressCountry("SE")))
