@@ -16,7 +16,7 @@
 
 	<properties>
 		<!-- GridBasedCrudComponent does not work with 8.3.3 -->
-		<vaadin.version>8.1.4</vaadin.version>
+		<vaadin.version>8.12.3</vaadin.version>
 		<vaadin.plugin.version>8.1.4</vaadin.plugin.version>
 		<jetty.plugin.version>9.4.9.v20180320</jetty.plugin.version>
 		<!-- TODO(joj): use 6.0b1 for google storage -->
