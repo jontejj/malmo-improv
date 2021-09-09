@@ -24,10 +24,10 @@
 		<slf4j.version>1.7.29</slf4j.version>
 		<junit.jupiter.version>5.5.2</junit.jupiter.version>
 		<junit.platform.version>1.2.0</junit.platform.version>
-		<appengine.maven.plugin.version>1.9.63</appengine.maven.plugin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
+		<appengine.maven.plugin.version>1.9.63</appengine.maven.plugin.version>
 		<!-- If there are no local customisations, this can also be "fetch" or 
 			"cdn" -->
 		<vaadin.widgetset.mode>local</vaadin.widgetset.mode>
@@ -136,7 +136,7 @@
 		<dependency>
 			<groupId>com.squins.google.fork.schema-org-client</groupId>
 			<artifactId>schema-org-client</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.objectify</groupId>
@@ -233,13 +233,14 @@
 			<plugin>
 				<groupId>com.google.cloud.tools</groupId>
 				<artifactId>appengine-maven-plugin</artifactId>
-				<version>2.2.0</version>
+				<version>2.4.0</version>
 				<configuration>
-				    <deploy.projectId>malmo-improv</deploy.projectId>
-				    <deploy.version>GCLOUD_CONFIG</deploy.version>
-					<enableJarClasses>false</enableJarClasses>
-					<devserver.host>0.0.0.0</devserver.host>
-					<devserver.port>8080</devserver.port>
+					<projectId>malmo-improv</projectId>
+					<version>24</version>
+					<!-- 
+						<devserver.host>0.0.0.0</devserver.host>
+	                    <devserver.port>8080</devserver.port>
+                     -->
 				</configuration>
 			</plugin>
 			<plugin>

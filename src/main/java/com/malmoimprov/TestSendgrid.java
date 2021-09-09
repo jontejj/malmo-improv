@@ -28,10 +28,24 @@ public class TestSendgrid
 {
 	public static void main(String[] args) throws IOException
 	{
+
+		Reservation reservation = new Reservation();
+		reservation.setName("Jonatan Test");
+		reservation.setEmail("jontejj@gmail.com");
+		reservation.setPaid(false);
+		reservation.setPhone("+46705475383");
+		reservation.setNrOfSeats(1);
+		reservation.setDiscount("MAF-member");
+		reservation.setPaid(true);
+		reservation.setCancelled(false);
+		reservation.setEventId(MyUI.EVENT_ID);
+		reservation.id = 1L;
+
 		Email from = new Email("jontejj@gmail.com");
 		String subject = "Sending with SendGrid is Fun Yes";
-		Email to = new Email("jontejj@gmail.com");
-		Content content = new Content("text/plain", "and easy to do anywhere, even with Java");
+		Email to = new Email(reservation.getEmail());
+		String htmlContent = MyUI.generateTemplateWithData("event-reservation-confirmation-email.ftlh", reservation);
+		Content content = new Content("text/html", htmlContent);
 		Mail mail = new Mail(from, subject, to, content);
 
 		SendGrid sg = new SendGrid(System.getenv("SENDGRID_API_KEY"));
