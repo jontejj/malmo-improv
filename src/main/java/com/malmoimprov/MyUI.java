@@ -56,6 +56,7 @@ import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.server.GAEVaadinServlet;
 import com.vaadin.server.Responsive;
+import com.vaadin.server.Sizeable.Unit;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.WebBrowser;
 import com.vaadin.shared.ui.ContentMode;
@@ -95,29 +96,29 @@ public class MyUI extends UI
 	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
 
 	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
-	static final long EVENT_ID = 25;
+	static final long EVENT_ID = 26;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
-	private static final long initialSeatCapacity = 35;
+	private static final long initialSeatCapacity = 22;
 	private static final BigDecimal ticketPrice = new BigDecimal("50");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/354541016384439";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/1332415923883641";
 	/**
 	 * https://console.cloud.google.com/storage/browser?folder=&organizationId=&project=malmo-improv
 	 */
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/Gladiator.png";
-	static final String eventName = "Gladiator - Improv Show";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/TimeCapsule.png";
+	static final String eventName = "Time Capsule - Improv Show";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder() //
 			.addUrl(facebookEventUrl) //
 			.addName(eventName) //
 			.addImage(imageLink) //
 			.addOrganizer("Malmö Improvisatorium") //
-			.addStartDate("2021-10-01T19:00:00+02:00") //
+			.addStartDate("2021-10-13T18:00:00+01:00") //
 			.addDuration("PT1H30M") //
 			.addLocation(CoreFactory.newPlaceBuilder() //
-					.addName("MAF, scen 1") //
+					.addName("MAF, scen 2") //
 					.addAddress(CoreFactory.newPostalAddressBuilder() //
 							.addStreetAddress("N. Skolgatan 10A") //
 							.addAddressLocality("Malmö") //
