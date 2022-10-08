@@ -95,31 +95,31 @@ public class MyUI extends UI
 	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
 
 	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
-	static final long EVENT_ID = 28;
+	static final long EVENT_ID = 29;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
-	private static final long initialSeatCapacity = 60;
-	private static final BigDecimal ticketPrice = new BigDecimal("50");
-	private static final BigDecimal memberPricePercentage = new BigDecimal("0.80");
+	private static final long initialSeatCapacity = 90;
+	private static final BigDecimal ticketPrice = new BigDecimal("60");
+	private static final BigDecimal memberPricePercentage = new BigDecimal("0.666667");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/978981756094155";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/478464650877192";
 	/**
 	 * https://console.cloud.google.com/storage/browser?folder=&organizationId=&project=malmo-improv
 	 */
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/A-You-Problem.jpg";
-	static final String eventName = "A You Problem - Improv Show";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/www.trap.png";
+	static final String eventName = "www.trap - improv show";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder() //
 			.addUrl(facebookEventUrl) //
 			.addName(eventName) //
 			.addImage(imageLink) //
 			.addOrganizer("Malmö Improvisatorium") //
-			.addStartDate("2022-05-27T18:30:00+02:00") //
+			.addStartDate("2022-10-15T18:00:00+02:00") //
 			.addDuration("PT1H30M") //
 			.addLocation(CoreFactory.newPlaceBuilder() //
-					.addName("MAF, scen 1") //
+					.addName("MAF, scen 3") //
 					.addAddress(CoreFactory.newPostalAddressBuilder() //
-							.addStreetAddress("N. Skolgatan 10A") //
+							.addStreetAddress("Spångatan 20") //
 							.addAddressLocality("Malmö") //
 							.addAddressRegion("SE-M") //
 							.addPostalCode("21153") //
