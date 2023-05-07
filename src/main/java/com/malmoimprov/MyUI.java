@@ -95,26 +95,26 @@ public class MyUI extends UI
 	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
 
 	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
-	static final long EVENT_ID = 32;
+	static final long EVENT_ID = 33;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
-	private static final long initialSeatCapacity = 31;
+	private static final long initialSeatCapacity = 60;
 	private static final BigDecimal ticketPrice = new BigDecimal("60");
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.666667");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/1156841854993741";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/785219632883298";
 	/**
 	 * https://console.cloud.google.com/storage/browser?folder=&organizationId=&project=malmo-improv
 	 */
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/Shes-Lost-Control.jpg";
-	static final String eventName = "She's Lost Control - Improv Show";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/Diptych.png";
+	static final String eventName = "Diptych - The TWO Team Improv Show";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder() //
 			.addUrl(facebookEventUrl) //
 			.addName(eventName) //
 			.addImage(imageLink) //
 			.addOrganizer("Malmö Improvisatorium") //
-			.addStartDate("2023-04-21T19:00:00+02:00") //
+			.addStartDate("2023-05-21T16:00:00+02:00") //
 			.addDuration("PT1H30M") //
 			.addLocation(Stages.STAGE_2) //
 			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();

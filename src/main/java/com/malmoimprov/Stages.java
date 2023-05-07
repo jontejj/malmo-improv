@@ -19,8 +19,18 @@ import com.google.schemaorg.core.Place;
 
 public final class Stages
 {
+	public static final Place STAGE_1 = CoreFactory.newPlaceBuilder() //
+			.addName("MAF, scen 1") // 60 seats
+			.addAddress(CoreFactory.newPostalAddressBuilder() //
+					.addStreetAddress("Norra Skolgatan 10 A") //
+					.addAddressLocality("Malmö") //
+					.addAddressRegion("SE-M") //
+					.addPostalCode("21152") //
+					.addAddressCountry("SE"))
+			.build();
+
 	public static final Place STAGE_2 = CoreFactory.newPlaceBuilder() //
-			.addName("MAF, scen 2") //
+			.addName("MAF, scen 2") // 31 seats
 			.addAddress(CoreFactory.newPostalAddressBuilder() //
 					.addStreetAddress("Norra Skolgatan 12") //
 					.addAddressLocality("Malmö") //
