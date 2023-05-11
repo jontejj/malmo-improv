@@ -545,11 +545,13 @@ public class MyUI extends UI
 
 	private void sendEmail(Reservation reservation, String subject, String template, String category)
 	{
-		Email from = new Email("jontejj@gmail.com", "Malmö Improvisatorium Reservations");
+		Email from = new Email("noreply@improvisatorium.com", "Malmö Improvisatorium Reservations");
+		Email replyTo = new Email("a.l.bobrick@gmail.com");
 		Email to = new Email(reservation.getEmail(), reservation.getName());
 		String emailText = generateTemplateWithData(template, reservation);
 		Content content = new Content("text/html", emailText);
 		Mail mail = new Mail(from, subject, to, content);
+		mail.setReplyTo(replyTo);
 
 		String apiKey = loadConfig(CONFIG_KEY_SENDGRID);
 		SendGrid sg = new SendGrid(apiKey);
