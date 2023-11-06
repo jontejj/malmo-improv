@@ -95,7 +95,7 @@ public class MyUI extends UI
 	private static final Logger LOG = LoggerFactory.getLogger(MyUI.class);
 
 	private static final String CONFIG_KEY_SENDGRID = "SENDGRID";
-	static final long EVENT_ID = 34;
+	static final long EVENT_ID = 35;
 	private static final String CURRENCY = "SEK";
 	private static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	private static final long initialSeatCapacity = 31;
@@ -103,18 +103,18 @@ public class MyUI extends UI
 	private static final BigDecimal memberPricePercentage = new BigDecimal("0.666667");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	private static final String facebookEventUrl = "https://www.facebook.com/events/216309617945795/";
+	private static final String facebookEventUrl = "https://www.facebook.com/events/1821190214979714/";
 	/**
 	 * https://console.cloud.google.com/storage/browser?folder=&organizationId=&project=malmo-improv
 	 */
-	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/Friday-13th.jpg";
-	static final String eventName = "The Friday the 13th - Improv Show";
+	private static final String imageLink = "https://storage.googleapis.com/malmo-improv.appspot.com/events/traffic_light.jpeg";
+	static final String eventName = "Traffic Light - Improv Show";
 	private static final com.google.schemaorg.core.Event event = CoreFactory.newTheaterEventBuilder() //
 			.addUrl(facebookEventUrl) //
 			.addName(eventName) //
 			.addImage(imageLink) //
 			.addOrganizer("Malmö Improvisatorium") //
-			.addStartDate("2023-10-13T19:00:00+02:00") //
+			.addStartDate("2023-11-11T18:00:00+01:00") //
 			.addDuration("PT1H30M") //
 			.addLocation(Stages.STAGE_2) //
 			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();
