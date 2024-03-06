@@ -25,8 +25,8 @@
 		<junit.jupiter.version>5.5.2</junit.jupiter.version>
 		<junit.platform.version>1.2.0</junit.platform.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.source>1.21</maven.compiler.source>
+		<maven.compiler.target>1.21</maven.compiler.target>
 		<appengine.maven.plugin.version>1.9.63</appengine.maven.plugin.version>
 		<!-- If there are no local customisations, this can also be "fetch" or 
 			"cdn" -->
