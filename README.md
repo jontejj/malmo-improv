@@ -1,54 +1,51 @@
-reservations-simple
-==============
+# My Todo
 
-Template for a simple Vaadin application that only requires a Servlet 3.0 container to run.
+This project can be used as a starting point to create your own Vaadin application with Spring Boot.
+It contains all the necessary configuration and some placeholder files to get you started.
 
+## Running the application
+Run `gcloud beta emulators datastore start` to emulate the datastore
+Login with `gcloud auth application-default login`
+Make sure to use environment variables output by: `gcloud beta emulators datastore env-init`
 
-Workflow
-========
+The project is a standard Maven project. To run it from the command line,
+type `mvnw` (Windows), or `./mvnw` (Mac & Linux), then open
+http://localhost:8080 in your browser.
 
-To compile the entire project, run "mvn install".
+You can also import the project to your IDE of choice as you would with any
+Maven project. Read more on [how to import Vaadin projects to different IDEs](https://vaadin.com/docs/latest/guide/step-by-step/importing) (Eclipse, IntelliJ IDEA, NetBeans, and VS Code).
 
-To run the application, run "mvn jetty:run" and open [http://localhost:8080/](http://localhost:8080/) .
+## Deploying to Production
 
-To access the local datastore, run the project with the app-engine plugin in eclipse and access [http://localhost:8080/_ah/admin](http://localhost:8080/_ah/admin)
+To create a production build, call `mvnw clean package -Pproduction` (Windows),
+or `./mvnw clean package -Pproduction` (Mac & Linux).
+This will build a JAR file with all the dependencies and front-end resources,
+ready to be deployed. The file can be found in the `target` folder after the build completes.
 
-To produce a deployable production mode WAR:
-- change productionMode to true in the servlet class configuration (nested in the UI class)
-- run "mvn clean package"
-- test the war file with "mvn jetty:run-war"
+Once the JAR file is built, you can run it using
+`java -jar target/reservations-1.0-SNAPSHOT.jar`
 
-Client-Side compilation
--------------------------
+Deploy to google app engine:
+gcloud app deploy target/reservations-1.0-SNAPSHOT.jar --appyaml src/main/appengine/app.yaml
 
-The generated maven project is using an automatically generated widgetset by default. 
-When you add a dependency that needs client-side compilation, the maven plugin will 
-automatically generate it for you. Your own client-side customisations can be added into
-package "client".
+## Project structure
 
-Debugging client side code
-  - run "mvn vaadin:run-codeserver" on a separate console while the application is running
-  - activate Super Dev Mode in the debug window of the application
+- `MainLayout.java` in `src/main/java` contains the navigation setup (i.e., the
+  side/top bar and the main menu). This setup uses
+  [App Layout](https://vaadin.com/docs/components/app-layout).
+- `views` package in `src/main/java` contains the server-side Java views of your application.
+- `views` folder in `frontend/` contains the client-side JavaScript views of your application.
+- `themes` folder in `frontend/` contains the custom CSS styles.
 
-Developing a theme using the runtime compiler
--------------------------
+## Useful links
 
-When developing the theme, Vaadin can be configured to compile the SASS based
-theme at runtime in the server. This way you can just modify the scss files in
-your IDE and reload the browser to see changes.
-
-To use the runtime compilation, open pom.xml and comment out the compile-theme 
-goal from vaadin-maven-plugin configuration. To remove a possibly existing 
-pre-compiled theme, run "mvn clean package" once.
-
-When using the runtime compiler, running the application in the "run" mode 
-(rather than in "debug" mode) can speed up consecutive theme compilations
-significantly.
-
-It is highly recommended to disable runtime compilation for production WAR files.
-
-Using Vaadin pre-releases
--------------------------
-
-If Vaadin pre-releases are not enabled by default, use the Maven parameter
-"-P vaadin-prerelease" or change the activation default value of the profile in pom.xml .
+- Read the documentation at [vaadin.com/docs](https://vaadin.com/docs).
+- Follow the tutorial at [vaadin.com/docs/latest/tutorial/overview](https://vaadin.com/docs/latest/tutorial/overview).
+- Create new projects at [start.vaadin.com](https://start.vaadin.com/).
+- Search UI components and their usage examples at [vaadin.com/docs/latest/components](https://vaadin.com/docs/latest/components).
+- View use case applications that demonstrate Vaadin capabilities at [vaadin.com/examples-and-demos](https://vaadin.com/examples-and-demos).
+- Build any UI without custom CSS by discovering Vaadin's set of [CSS utility classes](https://vaadin.com/docs/styling/lumo/utility-classes). 
+- Find a collection of solutions to common use cases at [cookbook.vaadin.com](https://cookbook.vaadin.com/).
+- Find add-ons at [vaadin.com/directory](https://vaadin.com/directory).
+- Ask questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/vaadin) or join our [Discord channel](https://discord.gg/MYFq5RTbBn).
+- Report issues, create pull requests in [GitHub](https://github.com/vaadin).

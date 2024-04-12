@@ -1,4 +1,0 @@
-cron:
-- description: "daily vaadin session cleanup task"
-  url: /CLEAN
-  schedule: every 2 hours
