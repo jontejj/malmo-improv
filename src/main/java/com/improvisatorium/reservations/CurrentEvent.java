@@ -24,7 +24,7 @@ import com.googlecode.objectify.ObjectifyService;
 
 public class CurrentEvent
 {
-	public static final long EVENT_ID = 37;
+	public static final long EVENT_ID = 38;
 	public static final String CURRENCY = "SEK";
 	public static final String PHONENUMBER_TO_PAY_TO = "0764088570";
 	public static final long INITIAL_SEAT_CAPACITY = 31;
@@ -32,20 +32,20 @@ public class CurrentEvent
 	public static final BigDecimal MEMBER_PRICE_PERCENTAGE = new BigDecimal("0.75");
 	// private static final BigDecimal folkUniPricePercentage = new BigDecimal("0.60");
 
-	public static final String EVENT_URL = "https://www.facebook.com/events/3713297092330950/";
+	public static final String EVENT_URL = "https://www.facebook.com/events/336134925708837";
 	/**
 	 * https://console.cloud.google.com/storage/browser?folder=&organizationId=&project=malmo-improv
 	 */
-	public static final String IMAGE_LINK = "https://storage.googleapis.com/malmo-improv.appspot.com/events/The_Interesting_Spouse.jpeg";
-	public static final String EVENT_NAME = "The Interesting Spouse - Improv Show";
+	public static final String IMAGE_LINK = "https://storage.googleapis.com/malmo-improv.appspot.com/events/blue-cheese.jpg";
+	public static final String EVENT_NAME = "The Blue Cheese Show - Improv Show";
 	public static final com.google.schemaorg.core.Event EVENT = CoreFactory.newTheaterEventBuilder() //
 			.addUrl(EVENT_URL) //
 			.addName(EVENT_NAME) //
 			.addImage(IMAGE_LINK) //
 			.addOrganizer("Malmö Improvisatorium") //
-			.addStartDate("2024-03-16T18:00:00+01:00") //
+			.addStartDate("2024-04-20T18:00:00+02:00") //
 			.addDuration("PT1H30M") //
-			.addLocation(Stages.STAGE_2) //
+			.addLocation(Stages.STAGE_1) //
 			.addProperty("phoneNumber", PHONENUMBER_TO_PAY_TO).build();
 
 	public static void init()
