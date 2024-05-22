@@ -76,12 +76,12 @@ public class Sendgrid
 		}
 	}
 
-	public void sendEmail(Reservation reservation, String subject, String template, String category)
+	public void sendEmail(Reservation reservation, String subject, String template, String category, Event event)
 	{
 		Email from = new Email("noreply@improvisatorium.com", "Malmö Improvisatorium Reservations");
 		Email replyTo = new Email("a.l.bobrick@gmail.com");
 		Email to = new Email(reservation.getEmail(), reservation.getName());
-		String emailText = Freemarker.generateTemplateWithData(template, reservation);
+		String emailText = Freemarker.generateTemplateWithData(template, reservation, event);
 		Content content = new Content("text/html", emailText);
 		Mail mail = new Mail(from, subject, to, content);
 		mail.setReplyTo(replyTo);

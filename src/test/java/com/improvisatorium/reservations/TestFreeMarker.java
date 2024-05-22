@@ -19,15 +19,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.math.BigDecimal;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import com.improvisatorium.reservations.Freemarker;
-import com.improvisatorium.reservations.MyUI;
-import com.improvisatorium.reservations.Reservation;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -65,7 +60,9 @@ public class TestFreeMarker
 		reservation.setPaid(false);
 		reservation.setPhone("1234");
 
-		Map<String, Object> root = Freemarker.reservationInformation(reservation, BigDecimal.TEN);
+		Event event = new Event();
+
+		Map<String, Object> root = Freemarker.reservationInformation(reservation, 10L, event);
 
 		// EventReservation eventReservation = CoreFactory.newEventReservationBuilder().addReservationId("" + reservation.id)
 		// .addReservationStatus(ReservationStatusTypeEnum.RESERVATION_PENDING)

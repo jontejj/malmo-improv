@@ -13,14 +13,13 @@
 package com.improvisatorium.reservations;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -29,28 +28,17 @@ public final class Event implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	@Id long id;
+	@Id Long id;
 
 	@NotBlank String phoneNumber;
 
-	BigDecimal ticketPrice;
-	BigDecimal memberPricePercentage;
-	String facebookUrl;
+	@NotNull Integer ticketPrice;
+	@NotNull Integer memberPricePercentage;
+	@NotNull String facebookUrl;
 	@NotBlank String name;
 	@NotBlank String organizer;
-
-	@Min(1) @NotNull Long nrOfSeats;
-
-	LocalDateTime startTime;
-
-	// Duration duration;
-
-	String addressName;
-	String street;
-	String city;
-	String postalCode;
-	String country;
-	String region;
+	@NotNull LocalDateTime startTime;
+	@NotNull Stages stage;
 	String posterUrl;
 
 	public long getId()
@@ -73,22 +61,22 @@ public final class Event implements Serializable
 		this.phoneNumber = phoneNumber;
 	}
 
-	public BigDecimal getTicketPrice()
+	public Integer getTicketPrice()
 	{
 		return ticketPrice;
 	}
 
-	public void setTicketPrice(BigDecimal ticketPrice)
+	public void setTicketPrice(Integer ticketPrice)
 	{
 		this.ticketPrice = ticketPrice;
 	}
 
-	public BigDecimal getMemberPricePercentage()
+	public Integer getMemberPricePercentage()
 	{
 		return memberPricePercentage;
 	}
 
-	public void setMemberPricePercentage(BigDecimal memberPricePercentage)
+	public void setMemberPricePercentage(Integer memberPricePercentage)
 	{
 		this.memberPricePercentage = memberPricePercentage;
 	}
@@ -123,16 +111,6 @@ public final class Event implements Serializable
 		this.organizer = organizer;
 	}
 
-	public Long getNrOfSeats()
-	{
-		return nrOfSeats;
-	}
-
-	public void setNrOfSeats(Long nrOfSeats)
-	{
-		this.nrOfSeats = nrOfSeats;
-	}
-
 	public LocalDateTime getStartTime()
 	{
 		return startTime;
@@ -143,64 +121,14 @@ public final class Event implements Serializable
 		this.startTime = startTime;
 	}
 
-	public String getAddressName()
+	public Stages getStage()
 	{
-		return addressName;
+		return stage;
 	}
 
-	public void setAddressName(String addressName)
+	public void setStage(Stages stage)
 	{
-		this.addressName = addressName;
-	}
-
-	public String getStreet()
-	{
-		return street;
-	}
-
-	public void setStreet(String street)
-	{
-		this.street = street;
-	}
-
-	public String getCity()
-	{
-		return city;
-	}
-
-	public void setCity(String city)
-	{
-		this.city = city;
-	}
-
-	public String getPostalCode()
-	{
-		return postalCode;
-	}
-
-	public void setPostalCode(String postalCode)
-	{
-		this.postalCode = postalCode;
-	}
-
-	public String getCountry()
-	{
-		return country;
-	}
-
-	public void setCountry(String country)
-	{
-		this.country = country;
-	}
-
-	public String getRegion()
-	{
-		return region;
-	}
-
-	public void setRegion(String region)
-	{
-		this.region = region;
+		this.stage = stage;
 	}
 
 	public String getPosterUrl()
@@ -237,9 +165,12 @@ public final class Event implements Serializable
 	@Override
 	public String toString()
 	{
-		return "Event [id=" + id + ", phoneNumber=" + phoneNumber + ", ticketPrice=" + ticketPrice + ", memberPricePercentage="
-				+ memberPricePercentage + ", facebookUrl=" + facebookUrl + ", name=" + name + ", organizer=" + organizer + ", nrOfSeats=" + nrOfSeats
-				+ ", startTime=" + startTime + ", addressName=" + addressName + ", street=" + street + ", city=" + city + ", postalCode=" + postalCode
-				+ ", country=" + country + ", region=" + region + ", posterUrl=" + posterUrl + "]";
+		return name;
+	}
+
+	public static Event latest(Objectify ofy)
+	{
+		Event eventWithMaxId = ofy.load().type(Event.class).order("-__key__").first().now();
+		return eventWithMaxId;
 	}
 }

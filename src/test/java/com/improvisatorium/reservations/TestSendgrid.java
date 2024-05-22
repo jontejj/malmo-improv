@@ -16,9 +16,6 @@ package com.improvisatorium.reservations;
 
 import java.io.IOException;
 
-import com.improvisatorium.reservations.CurrentEvent;
-import com.improvisatorium.reservations.Freemarker;
-import com.improvisatorium.reservations.Reservation;
 import com.sendgrid.Content;
 import com.sendgrid.Email;
 import com.sendgrid.Mail;
@@ -31,6 +28,8 @@ public class TestSendgrid
 {
 	public static void main(String[] args) throws IOException
 	{
+		Event event = new Event();
+		event.setId(100);
 
 		Reservation reservation = new Reservation();
 		reservation.setName("Jonatan Test");
@@ -41,13 +40,13 @@ public class TestSendgrid
 		reservation.setDiscount("MAF-member");
 		reservation.setPaid(true);
 		reservation.setCancelled(false);
-		reservation.setEventId(CurrentEvent.EVENT_ID);
+		reservation.setEventId(event.getId());
 		reservation.id = 1L;
 
 		Email from = new Email("jontejj@gmail.com");
 		String subject = "Sending with SendGrid is Fun Yes";
 		Email to = new Email(reservation.getEmail());
-		String htmlContent = Freemarker.generateTemplateWithData("event-reservation-confirmation-email.ftlh", reservation);
+		String htmlContent = Freemarker.generateTemplateWithData("event-reservation-confirmation-email.ftlh", reservation, event);
 		Content content = new Content("text/html", htmlContent);
 		Mail mail = new Mail(from, subject, to, content);
 

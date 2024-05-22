@@ -16,8 +16,9 @@ package com.improvisatorium.reservations;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +28,12 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Objectify;
+import com.google.common.collect.Ordering;
 import com.googlecode.objectify.ObjectifyService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.html.H2;
@@ -39,6 +41,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.renderer.NativeButtonRenderer;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinServletRequest;
 
 import jakarta.annotation.security.PermitAll;
@@ -52,6 +55,8 @@ public class AdminPage extends VerticalLayout
 	private static final String LOGOUT_SUCCESS_URL = "/";
 
 	private final Sendgrid sendgrid;
+
+	private VerticalLayout attendanceView;
 
 	public AdminPage()
 	{
@@ -70,22 +75,39 @@ public class AdminPage extends VerticalLayout
 			SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
 			logoutHandler.logout(VaadinServletRequest.getCurrent().getHttpServletRequest(), null, null);
 		});
-		add(header, image, logoutButton);
+		RouterLink routerLink = new RouterLink("New event", NewEventCreationPage.class);
+		add(header, image, routerLink, logoutButton);
 
 		ImmutableSet<String> admins = ImmutableSet.of("jontejj@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com");
 		boolean isAdmin = admins.contains(email.toLowerCase());
 		if(isAdmin)
 		{
+			ComboBox<Event> eventComboBox = new ComboBox<>("Select Event");
+			List<Event> events = getEvents();
+			eventComboBox.setItems(events);
+			Optional<Event> latestEvent = events.stream().max(Ordering.natural().onResultOf(Event::getId));
+			AtomicReference<Event> selectedEvent = new AtomicReference<>(latestEvent.orElse(null));
+			eventComboBox.addValueChangeListener(event -> {
+				selectedEvent.set(event.getValue());
+				attendanceList(selectedEvent.get());
+			});
+			add(eventComboBox);
 			add(new Button("Send 10 event reminders", (e) -> {
-				sendEventReminders(10);
+				sendEventReminders(10, selectedEvent.get());
 			}));
-			attendanceList();
+			latestEvent.ifPresent(this::attendanceList);
 		}
 	}
 
-	private void attendanceList()
+	private void attendanceList(Event event)
 	{
-		List<Reservation> list = getActiveReservations();
+		if(attendanceView != null)
+		{
+			remove(attendanceView);
+		}
+		attendanceView = new VerticalLayout();
+
+		List<Reservation> list = getActiveReservations(event);
 		// Create a grid bound to the list
 		Grid<Reservation> grid = new Grid<>();
 		grid.setWidth(100, Unit.PERCENTAGE);
@@ -93,7 +115,7 @@ public class AdminPage extends VerticalLayout
 		grid.addColumn(Reservation::getName).setHeader("Name");
 		grid.addColumn(Reservation::getPhone).setHeader("Phone");
 		grid.addColumn(Reservation::getNrOfSeats).setHeader("Seats");
-		grid.addColumn(CurrentEvent::priceToPay).setHeader("Price");
+		grid.addColumn(res -> Prices.priceToPay(res, event)).setHeader("Price");
 		grid.addColumn(Reservation::getPaid).setHeader("Paid");
 		grid.setSelectionMode(SelectionMode.NONE);
 		NativeButtonRenderer<Reservation> confirmPaymentButton = new NativeButtonRenderer<Reservation>(
@@ -102,10 +124,10 @@ public class AdminPage extends VerticalLayout
 			if(!reservationToConfirm.getSentConfirmationAboutEvent())
 			{
 				reservationToConfirm.setPaid(true);
-				sendConfirmationEmail(reservationToConfirm);
+				sendConfirmationEmail(reservationToConfirm, event);
 				reservationToConfirm.setSentConfirmationAboutEvent(true);
 				ObjectifyService.run(() -> ObjectifyService.ofy().save().entities(reservationToConfirm).now());
-				grid.setItems(getActiveReservations());
+				grid.setItems(getActiveReservations(event));
 			}
 		});
 		grid.addColumn(confirmPaymentButton);
@@ -116,11 +138,11 @@ public class AdminPage extends VerticalLayout
 			{
 				reservationToCancel.setCancelled(true);
 				ObjectifyService.run(() -> {
-					SeatsRemaining seatsRemaining = SeatsRemaining.load(ofy());
+					SeatsRemaining seatsRemaining = SeatsRemaining.load(ofy(), event);
 					seatsRemaining.setSeatsRemaining(seatsRemaining.getSeatsRemaining() + reservationToCancel.getNrOfSeats());
 					ofy().save().entities(reservationToCancel, seatsRemaining).now();
 				});
-				grid.setItems(getActiveReservations());
+				grid.setItems(getActiveReservations(event));
 			}
 		});
 		grid.addColumn(cancelButton);
@@ -134,45 +156,42 @@ public class AdminPage extends VerticalLayout
 		});
 		grid.addColumn(attendedButton);
 
-		BigDecimal totalPrepaid = list.stream().filter(r -> r.getPaid()).map(CurrentEvent::priceToPay).reduce(BigDecimal.ZERO, BigDecimal::add);
+		long totalPrepaid = list.stream().filter(r -> r.getPaid()).map(res -> Prices.priceToPay(res, event)).reduce(0L, Long::sum);
 
-		add(grid);
-
-		add(new StyledText("Total prepaid: " + totalPrepaid));
-		add(new StyledText(
-				"Tickets booked: " + (CurrentEvent.INITIAL_SEAT_CAPACITY - seatsRemaining()) + " of " + CurrentEvent.INITIAL_SEAT_CAPACITY));
+		attendanceView.add(grid);
+		attendanceView.add(new StyledText("Total prepaid: " + totalPrepaid));
+		attendanceView.add(new StyledText(
+				"Tickets booked: " + (event.getStage().seatCapacity() - seatsRemaining(event)) + " of " + event.getStage().seatCapacity()));
+		add(attendanceView);
 	}
 
-	private List<Reservation> getActiveReservations()
+	private List<Reservation> getActiveReservations(Event event)
 	{
-		return ObjectifyService.run(() -> ObjectifyService.ofy().load().type(Reservation.class).filter("eventId = ", CurrentEvent.EVENT_ID)
+		return ObjectifyService.run(() -> ObjectifyService.ofy().load().type(Reservation.class).filter("eventId = ", event.getId())
 				.filter("cancelled =", false).list());
 	}
 
-	private long seatsRemaining()
+	private List<Event> getEvents()
+	{
+		return ObjectifyService.run(() -> ObjectifyService.ofy().load().type(Event.class).list());
+	}
+
+	private long seatsRemaining(Event event)
 	{
 
 		long result = ObjectifyService.run(() -> {
-			SeatsRemaining seatsRemaining = SeatsRemaining.load(ofy());
+			SeatsRemaining seatsRemaining = SeatsRemaining.load(ofy(), event);
 			return seatsRemaining.getSeatsRemaining();
 		});
 		return result;
 	}
 
-	private void migrateReservations()
+	private void sendEventReminders(int nrOfRemindersToSend, Event event)
 	{
-		Objectify ofy = ObjectifyService.ofy();
-		List<Reservation> list = ofy.load().type(Reservation.class).list();
-		ofy.save().entities(list).now();
-	}
-
-	private void sendEventReminders(int nrOfRemindersToSend)
-	{
-		List<Reservation> list = ObjectifyService
-				.run(() -> ObjectifyService.ofy().load().type(Reservation.class).filter("eventId = ", CurrentEvent.EVENT_ID)
-						.filter("cancelled =", false).filter("sentReminderAboutEvent =", false).limit(nrOfRemindersToSend).list());
+		List<Reservation> list = ObjectifyService.run(() -> ObjectifyService.ofy().load().type(Reservation.class).filter("eventId = ", event.getId())
+				.filter("cancelled =", false).filter("sentReminderAboutEvent =", false).limit(nrOfRemindersToSend).list());
 		list.forEach(r -> {
-			sendReminderEmail(r);
+			sendReminderEmail(r, event);
 			r.setSentReminderAboutEvent(true);
 			ObjectifyService.run(() -> ObjectifyService.ofy().save().entities(r).now());
 		});
@@ -182,13 +201,13 @@ public class AdminPage extends VerticalLayout
 		add(label);
 	}
 
-	private void sendReminderEmail(Reservation reservation) throws EmailException
+	private void sendReminderEmail(Reservation reservation, Event event) throws EmailException
 	{
-		sendgrid.sendEmail(reservation, "See you soon @ " + CurrentEvent.EVENT_NAME + "!", "reservation-reminder.ftlh", "reminder");
+		sendgrid.sendEmail(reservation, "See you soon @ " + event.getName() + "!", "reservation-reminder.ftlh", "reminder", event);
 	}
 
-	private void sendConfirmationEmail(Reservation reservation)
+	private void sendConfirmationEmail(Reservation reservation, Event event)
 	{
-		sendgrid.sendEmail(reservation, "Payment confirmed for " + CurrentEvent.EVENT_NAME, "reservation-confirmation.ftlh", "reminder");
+		sendgrid.sendEmail(reservation, "Payment confirmed for " + event.getName(), "reservation-confirmation.ftlh", "reminder", event);
 	}
 }

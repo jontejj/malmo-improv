@@ -17,36 +17,77 @@ package com.improvisatorium.reservations;
 import com.google.schemaorg.core.CoreFactory;
 import com.google.schemaorg.core.Place;
 
-public final class Stages
+public enum Stages
 {
-	public static final Place STAGE_1 = CoreFactory.newPlaceBuilder() //
-			.addName("MAF, scen 1") // 60 seats
-			.addAddress(CoreFactory.newPostalAddressBuilder() //
-					.addStreetAddress("Norra Skolgatan 10 A") //
-					.addAddressLocality("Malmö") //
-					.addAddressRegion("SE-M") //
-					.addPostalCode("21152") //
-					.addAddressCountry("SE"))
-			.build();
+	STAGE_1
+	{
+		@Override
+		public Place place()
+		{
+			return CoreFactory.newPlaceBuilder() //
+					.addName("MAF, scen 1") // 60 seats
+					.addAddress(CoreFactory.newPostalAddressBuilder() //
+							.addStreetAddress("Norra Skolgatan 10 A") //
+							.addAddressLocality("Malmö") //
+							.addAddressRegion("SE-M") //
+							.addPostalCode("21152") //
+							.addAddressCountry("SE"))
+					.build();
+		}
 
-	public static final Place STAGE_2 = CoreFactory.newPlaceBuilder() //
-			.addName("MAF, scen 2") // 31 seats
-			.addAddress(CoreFactory.newPostalAddressBuilder() //
-					.addStreetAddress("Norra Skolgatan 12") //
-					.addAddressLocality("Malmö") //
-					.addAddressRegion("SE-M") //
-					.addPostalCode("21152") //
-					.addAddressCountry("SE"))
-			.build();
+		@Override
+		public long seatCapacity()
+		{
+			return 60;
+		}
+	},
 
-	public static final Place STAGE_3 = CoreFactory.newPlaceBuilder() //
-			.addName("MAF, scen 3") //
-			.addAddress(CoreFactory.newPostalAddressBuilder() //
-					.addStreetAddress("Spångatan 20") //
-					.addAddressLocality("Malmö") //
-					.addAddressRegion("SE-M") //
-					.addPostalCode("21153") //
-					.addAddressCountry("SE"))
-			.build();
+	STAGE_2
+	{
+		@Override
+		public Place place()
+		{
+			return CoreFactory.newPlaceBuilder() //
+					.addName("MAF, scen 2") // 31 seats
+					.addAddress(CoreFactory.newPostalAddressBuilder() //
+							.addStreetAddress("Norra Skolgatan 12") //
+							.addAddressLocality("Malmö") //
+							.addAddressRegion("SE-M") //
+							.addPostalCode("21152") //
+							.addAddressCountry("SE"))
+					.build();
+		}
 
+		@Override
+		public long seatCapacity()
+		{
+			return 31;
+		}
+	},
+	STAGE_3
+	{
+		@Override
+		public Place place()
+		{
+			return CoreFactory.newPlaceBuilder() //
+					.addName("MAF, scen 3") // 60 seats
+					.addAddress(CoreFactory.newPostalAddressBuilder() //
+							.addStreetAddress("Spångatan 20") //
+							.addAddressLocality("Malmö") //
+							.addAddressRegion("SE-M") //
+							.addPostalCode("21153") //
+							.addAddressCountry("SE"))
+					.build();
+		}
+
+		@Override
+		public long seatCapacity()
+		{
+			return 60;
+		}
+	};
+
+	public abstract Place place();
+
+	public abstract long seatCapacity();
 }

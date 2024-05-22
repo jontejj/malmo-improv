@@ -28,13 +28,14 @@ public class Application extends SpringBootServletInitializer implements AppShel
 	public static void main(String[] args)
 	{
 		ObjectifyService.init();
+		ObjectifyService.factory().getTranslators().add(new LocalDateTimeTranslatorFactory());
 		ObjectifyService.register(Reservation.class);
 		ObjectifyService.register(SeatsRemaining.class);
 		ObjectifyService.register(Config.class);
+		ObjectifyService.register(Event.class);
 		try(Closeable closeable = ObjectifyService.begin())
 		{
 			ObjectifyService.ofy().transactNew(() -> {
-				CurrentEvent.init();
 				Sendgrid.init();
 			});
 		}

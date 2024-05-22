@@ -16,7 +16,6 @@ package com.improvisatorium.reservations;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,10 +45,10 @@ public class Freemarker
 		cfg.setLogTemplateExceptions(false);
 	}
 
-	public static String generateTemplateWithData(String templateName, Reservation reservation) throws EmailException
+	public static String generateTemplateWithData(String templateName, Reservation reservation, Event event) throws EmailException
 	{
-		BigDecimal priceToPay = CurrentEvent.priceToPay(reservation.getNrOfSeats(), reservation.getDiscount());
-		Map<String, Object> map = reservationInformation(reservation, priceToPay);
+		long priceToPay = Prices.priceToPay(reservation.getNrOfSeats(), reservation.getDiscount(), event);
+		Map<String, Object> map = reservationInformation(reservation, priceToPay, event);
 		try
 		{
 			Template temp = cfg.getTemplate(templateName);
@@ -63,7 +62,7 @@ public class Freemarker
 		}
 	}
 
-	static Map<String, Object> reservationInformation(Reservation reservation, BigDecimal priceToPay)
+	static Map<String, Object> reservationInformation(Reservation reservation, long priceToPay, Event event)
 	{
 		ReservationStatusTypeEnum status = ReservationStatusTypeEnum.RESERVATION_PENDING;
 		if(reservation.getPaid())
@@ -91,10 +90,10 @@ public class Freemarker
 						.addTelephone(reservation.getPhone())) //
 				.addProperty("numSeats", "" + reservation.getNrOfSeats()) //
 				.addDescription(reservation.getNrOfSeats() + " seats") //
-				.addReservationFor(CurrentEvent.EVENT) //
+				.addReservationFor(schemaForEvent(event)) //
 				.addTotalPrice(CoreFactory.newPriceSpecificationBuilder() //
-						.addPriceCurrency(CurrentEvent.CURRENCY) //
-						.addPrice(priceToPay.toString()))
+						.addPriceCurrency(Config.CURRENCY) //
+						.addPrice("" + priceToPay))
 				.build();
 		String asJsonLd = getAsJson(eventReservation);
 
@@ -115,5 +114,18 @@ public class Freemarker
 		{
 			throw new RuntimeException("Failed to generate schema.org string", e);
 		}
+	}
+
+	public static com.google.schemaorg.core.Event schemaForEvent(Event event)
+	{
+		return CoreFactory.newTheaterEventBuilder() //
+				.addUrl(event.getFacebookUrl()) //
+				.addName(event.getName()) //
+				.addImage(event.getPosterUrl()) //
+				.addOrganizer(event.getOrganizer()) //
+				.addStartDate(event.getStartTime().toString()) //
+				.addDuration("PT1H30M") //
+				.addLocation(event.getStage().place()) //
+				.addProperty("phoneNumber", event.getPhoneNumber()).build();
 	}
 }

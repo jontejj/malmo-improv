@@ -48,4 +48,6 @@ public class Config
 	{
 		this.value = value;
 	}
+
+	public static final String CURRENCY = "SEK";
 }

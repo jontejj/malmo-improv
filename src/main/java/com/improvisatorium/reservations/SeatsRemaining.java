@@ -50,8 +50,8 @@ public class SeatsRemaining
 		return this;
 	}
 
-	public static SeatsRemaining load(Objectify ofy)
+	public static SeatsRemaining load(Objectify ofy, Event event)
 	{
-		return ofy.load().key(ObjectifyService.key(SeatsRemaining.class, "" + CurrentEvent.EVENT_ID)).now();
+		return ofy.load().key(ObjectifyService.key(SeatsRemaining.class, "" + event.getId())).now();
 	}
 }

@@ -2,7 +2,6 @@ package com.improvisatorium.reservations;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
-import java.math.BigDecimal;
 import java.util.Map;
 
 import com.googlecode.objectify.Key;
@@ -47,33 +46,36 @@ public class MyUI extends VerticalLayout
 		this.sendgrid = new Sendgrid();
 		binder = new BeanValidationBinder<>(Reservation.class);
 
-		Image banner = new Image(CurrentEvent.IMAGE_LINK, "");
+		SeatsRemaining seatsRemaining = null;
+		Event latestEvent = null;
+		try(Closeable closeable = ObjectifyService.begin())
+		{
+			Objectify objectify = ofy();
+			latestEvent = Event.latest(objectify);
+			seatsRemaining = SeatsRemaining.load(objectify, latestEvent);
+		}
+
+		Image banner = new Image(latestEvent.getPosterUrl(), "");
 		// banner.setSizeFull();
 		banner.setWidth(30, Unit.PERCENTAGE);
 		// banner.addStyleName("jonatan");
 		// banner.setWidth(800, Unit.PIXELS);
 		add(banner);
 
-		SeatsRemaining seatsRemaining = null;
-		try(Closeable closeable = ObjectifyService.begin())
-		{
-			seatsRemaining = SeatsRemaining.load(ofy());
-		}
-
 		if(seatsRemaining.getSeatsRemaining() > 0)
 		{
-			add(step1(seatsRemaining));
+			add(step1(seatsRemaining, latestEvent));
 		}
 		else
 		{
-			add(fullyBooked());
+			add(fullyBooked(latestEvent));
 		}
 	}
 
-	private VerticalLayout fullyBooked()
+	private VerticalLayout fullyBooked(Event event)
 	{
 		final VerticalLayout fullyBooked = new VerticalLayout();
-		Span text = new Span(CurrentEvent.EVENT_NAME + " sold out. Better luck next time!");
+		Span text = new Span(event.getName() + " sold out. Better luck next time!");
 		// text.addStyleName("small");
 		text.setWidth(100, Unit.PERCENTAGE);
 		fullyBooked.add(text);
@@ -87,14 +89,14 @@ public class MyUI extends VerticalLayout
 		return fullyBooked;
 	}
 
-	private Component step1(SeatsRemaining seatsRemaining)
+	private Component step1(SeatsRemaining seatsRemaining, Event event)
 	{
 		final VerticalLayout step1Container = new VerticalLayout();
 		final StyledText instructions = new StyledText(
-				"Step 1/2: Reserve your seats for <b>" + CurrentEvent.EVENT_NAME + "</b> by filling in your details here:");
+				"Step 1/2: Reserve your seats for <b>" + event.getName() + "</b> by filling in your details here:");
 		// instructions.setWidth(100, Unit.PERCENTAGE);
 		int defaultNrOfSeats = 1;
-		final StyledText price = new StyledText(priceDescription(defaultNrOfSeats, "Normal"));
+		final StyledText price = new StyledText(priceDescription(defaultNrOfSeats, "Normal", event));
 		final FormLayout step1 = new FormLayout();
 
 		StringBuilder caption = new StringBuilder("Nr of seats to reserve (max 5)");
@@ -118,17 +120,16 @@ public class MyUI extends VerticalLayout
 			reserveButton.setEnabled(binder.isValid());
 			try
 			{
-				price.setText("<text>" + priceDescription(Long.parseLong(nrOfSeats.getValue()), discounts.getValue()) + "</text>");
+				price.setText("<text>" + priceDescription(Long.parseLong(nrOfSeats.getValue()), discounts.getValue(), event) + "</text>");
 				// price.markAsDirty();
 			}
 			catch(NumberFormatException invalid)
 			{
 
 			}
-
 		});
 		reserveButton.addClickListener(e -> {
-			reserveButtonClicked(step1Container);
+			reserveButtonClicked(step1Container, event);
 		});
 
 		final TextField name = new TextField("Name:");
@@ -148,12 +149,12 @@ public class MyUI extends VerticalLayout
 		return step1Container;
 	}
 
-	private String priceDescription(long nrOfSeats, String defaultDiscountType)
+	private String priceDescription(long nrOfSeats, String defaultDiscountType, Event event)
 	{
-		return "Total ticket price: " + CurrentEvent.priceToPay(nrOfSeats, defaultDiscountType) + " " + CurrentEvent.CURRENCY;
+		return "Total ticket price: " + Prices.priceToPay(nrOfSeats, defaultDiscountType, event) + " " + Config.CURRENCY;
 	}
 
-	private void reserveButtonClicked(final Component step1)
+	private void reserveButtonClicked(final Component step1, Event event)
 	{
 		UI.getCurrent().getPage().retrieveExtendedClientDetails(new ExtendedClientDetailsReceiver(){
 			private static final long serialVersionUID = 1L;
@@ -171,11 +172,11 @@ public class MyUI extends VerticalLayout
 					throw new RuntimeException("server side validation failed after client validation passed, forgot to add a UI component?", e1);
 				}
 				reservation.setCreationTime(extendedClientDetails.getCurrentDate());
-				reservation.setEventId(CurrentEvent.EVENT_ID);
+				reservation.setEventId(event.getId());
 
 				Reservation savedReservation = ObjectifyService.run(() -> {
 					Objectify ofy = ObjectifyService.ofy();
-					SeatsRemaining seatsRemainingCheck = SeatsRemaining.load(ofy);
+					SeatsRemaining seatsRemainingCheck = SeatsRemaining.load(ofy, event);
 					if(seatsRemainingCheck.getSeatsRemaining() < reservation.getNrOfSeats())
 						throw new RuntimeException("Got booked while you were entering your data. Only " + seatsRemainingCheck.getSeatsRemaining()
 								+ " seats are now remaining.");
@@ -185,20 +186,20 @@ public class MyUI extends VerticalLayout
 					return (Reservation) savedData.get(ObjectifyService.key(reservation));
 				});
 
-				sendStep1ConfirmationEmail(savedReservation);
+				sendStep1ConfirmationEmail(savedReservation, event);
 
 				final VerticalLayout step2 = new VerticalLayout();
 
-				BigDecimal priceToPay = CurrentEvent.priceToPay(savedReservation.getNrOfSeats(), savedReservation.getDiscount());
+				long priceToPay = Prices.priceToPay(savedReservation.getNrOfSeats(), savedReservation.getDiscount(), event);
 
-				StyledText instructions2 = new StyledText("<b>Step 2/2</b>: Swish " + priceToPay.longValue() + " " + CurrentEvent.CURRENCY + " to "
-						+ CurrentEvent.PHONENUMBER_TO_PAY_TO
+				StyledText instructions2 = new StyledText("<b>Step 2/2</b>: Swish " + priceToPay + " " + Config.CURRENCY + " to "
+						+ event.getPhoneNumber()
 						+ " to finalize your reservation. <br/><b>Note:</b>Your tickets are reserved for 3 days. Please remember to buy them via swish to finish the booking.");
 				step2.add(new StyledText("Thanks " + savedReservation.getName() + ", your reservation of " + savedReservation.getNrOfSeats()
 						+ " seat(s) is noted! Your reservation number is " + savedReservation.id + ".<br/>An email confirmation has been sent to "
 						+ savedReservation.getEmail() + ". <br/><br/>"), instructions2);
 
-				Anchor facebookLink = new Anchor(CurrentEvent.EVENT_URL, "Remember to also sign up for the event on facebook!");
+				Anchor facebookLink = new Anchor(event.getFacebookUrl(), "Remember to also sign up for the event on facebook!");
 				// facebookLink.setIcon(VaadinIcons.FACEBOOK_SQUARE);
 				facebookLink.setTarget(AnchorTarget.BLANK);
 				step2.add(facebookLink);
@@ -209,10 +210,10 @@ public class MyUI extends VerticalLayout
 
 	}
 
-	private void sendStep1ConfirmationEmail(Reservation reservation) throws EmailException
+	private void sendStep1ConfirmationEmail(Reservation reservation, Event event) throws EmailException
 	{
 		sendgrid.sendEmail(	reservation, reservation.getName() + " your reservation is partially completed",
-							"event-reservation-confirmation-email.ftlh", "reservations");
+							"event-reservation-confirmation-email.ftlh", "reservations", event);
 	}
 
 	@WebFilter(urlPatterns = "/*", asyncSupported = true)
