@@ -27,6 +27,7 @@ import com.google.common.io.ByteStreams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyService;
+import com.googlecode.objectify.util.Closeable;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -131,15 +132,18 @@ public class NewEventCreationPage extends VerticalLayout
 				binder.writeBean(newEvent);
 				newEvent.setPosterUrl(posterUrl.get());
 				LOG.info("Creating event: " + newEvent);
-				ObjectifyService.run(() -> {
-					Objectify ofy = ObjectifyService.ofy();
-					Map<Key<Event>, Event> savedData = ofy.save().entities(newEvent).now();
-					Event savedEvent = savedData.values().iterator().next();
-					SeatsRemaining seatsRemaining = new SeatsRemaining().setEventId("" + savedEvent.getId())
-							.setSeatsRemaining(savedEvent.getStage().seatCapacity());
-					ofy.save().entities(seatsRemaining).now();
-					return savedEvent;
-				});
+				try(Closeable closeable = ObjectifyService.begin())
+				{
+					ObjectifyService.ofy().transactNew(() -> {
+						Objectify ofy = ObjectifyService.ofy();
+						Map<Key<Event>, Event> savedData = ofy.save().entities(newEvent).now();
+						Event savedEvent = savedData.values().iterator().next();
+						SeatsRemaining seatsRemaining = new SeatsRemaining().setEventId("" + savedEvent.getId())
+								.setSeatsRemaining(savedEvent.getStage().seatCapacity());
+						ofy.save().entities(seatsRemaining).now();
+						return savedEvent;
+					});
+				}
 				Notification.show("Saved event: " + newEvent);
 				LOG.info("Saved event: " + newEvent);
 				UI.getCurrent().navigate(MyUI.class);

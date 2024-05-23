@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -61,6 +62,16 @@ public class TestFreeMarker
 		reservation.setPhone("1234");
 
 		Event event = new Event();
+		event.setFacebookUrl("http://facebook.com");
+		event.setId(1);
+		event.setMemberPricePercentage(75);
+		event.setName("Christmas Show");
+		event.setOrganizer("Malmö Improv");
+		event.setPhoneNumber("112");
+		event.setPosterUrl("https://media.istockphoto.com/id/1444101433/sv/foto/flying-drone-over-large-lake-with-view-of-mountain-peaks.jpg?s=1024x1024&w=is&k=20&c=gGIkDp-s1bjSA0H3mhh7HbaZOILjNeNcRqOiKgMwuPQ=");
+		event.setStage(Stages.STAGE_1);
+		event.setStartTime(LocalDateTime.now());
+		event.setTicketPrice(100);
 
 		Map<String, Object> root = Freemarker.reservationInformation(reservation, 10L, event);
 
