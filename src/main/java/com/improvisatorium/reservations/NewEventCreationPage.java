@@ -57,6 +57,7 @@ public class NewEventCreationPage extends VerticalLayout
 	public NewEventCreationPage()
 	{
 		Event newEvent = new Event();
+		newEvent.setId(Counter.getNextId());
 		newEvent.setStage(Stages.STAGE_1);
 		newEvent.setOrganizer("Malmö Improvisatorium");
 		newEvent.setTicketPrice(80);

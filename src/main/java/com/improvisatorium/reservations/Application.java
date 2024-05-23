@@ -32,6 +32,7 @@ public class Application extends SpringBootServletInitializer implements AppShel
 		ObjectifyService.register(Reservation.class);
 		ObjectifyService.register(SeatsRemaining.class);
 		ObjectifyService.register(Config.class);
+		ObjectifyService.register(Counter.class);
 		ObjectifyService.register(Event.class);
 		try(Closeable closeable = ObjectifyService.begin())
 		{

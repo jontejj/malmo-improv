@@ -170,6 +170,7 @@ public final class Event implements Serializable
 
 	public static Event latest(Objectify ofy)
 	{
+		// This query depends on an index created with "gcloud datastore indexes create src/main/appengine/index.yaml"
 		Event eventWithMaxId = ofy.load().type(Event.class).order("-__key__").first().now();
 		return eventWithMaxId;
 	}
