@@ -78,7 +78,8 @@ public class AdminPage extends VerticalLayout
 		RouterLink routerLink = new RouterLink("New event", NewEventCreationPage.class);
 		add(header, image, routerLink, logoutButton);
 
-		ImmutableSet<String> admins = ImmutableSet.of("jontejj@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com");
+		ImmutableSet<String> admins = ImmutableSet.of(	"jontejj@gmail.com", "sara.zeidi58@gmail.com", "a.l.bobrick@gmail.com",
+														"Michel.anderlini@gmail.com", "misshelenebjorkman@gmail.com");
 		boolean isAdmin = admins.contains(email.toLowerCase());
 		if(isAdmin)
 		{
