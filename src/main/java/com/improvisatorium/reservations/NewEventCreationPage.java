@@ -130,24 +130,32 @@ public class NewEventCreationPage extends VerticalLayout
 		createButton.addClickListener(e -> {
 			try
 			{
-				binder.writeBean(newEvent);
-				newEvent.setPosterUrl(posterUrl.get());
-				LOG.info("Creating event: " + newEvent);
-				try(Closeable closeable = ObjectifyService.begin())
+				String posterStr = posterUrl.get();
+				if(posterStr == null)
 				{
-					ObjectifyService.ofy().transactNew(() -> {
-						Objectify ofy = ObjectifyService.ofy();
-						Map<Key<Event>, Event> savedData = ofy.save().entities(newEvent).now();
-						Event savedEvent = savedData.values().iterator().next();
-						SeatsRemaining seatsRemaining = new SeatsRemaining().setEventId("" + savedEvent.getId())
-								.setSeatsRemaining(savedEvent.getStage().seatCapacity());
-						ofy.save().entities(seatsRemaining).now();
-						return savedEvent;
-					});
+					Notification.show("Image required");
 				}
-				Notification.show("Saved event: " + newEvent);
-				LOG.info("Saved event: " + newEvent);
-				UI.getCurrent().navigate(MyUI.class);
+				else
+				{
+					binder.writeBean(newEvent);
+					newEvent.setPosterUrl(posterStr);
+					LOG.info("Creating event: " + newEvent);
+					try(Closeable closeable = ObjectifyService.begin())
+					{
+						ObjectifyService.ofy().transactNew(() -> {
+							Objectify ofy = ObjectifyService.ofy();
+							Map<Key<Event>, Event> savedData = ofy.save().entities(newEvent).now();
+							Event savedEvent = savedData.values().iterator().next();
+							SeatsRemaining seatsRemaining = new SeatsRemaining().setEventId("" + savedEvent.getId())
+									.setSeatsRemaining(savedEvent.getStage().seatCapacity());
+							ofy.save().entities(seatsRemaining).now();
+							return savedEvent;
+						});
+					}
+					Notification.show("Saved event: " + newEvent);
+					LOG.info("Saved event: " + newEvent);
+					UI.getCurrent().navigate(MyUI.class);
+				}
 			}
 			catch(ValidationException e1)
 			{
